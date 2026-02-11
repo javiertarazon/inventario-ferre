@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ producto.codigo }} - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>
+            <i class="bi bi-box"></i> {{ producto.codigo }}
+        </h1>
+        <p class="lead">{{ producto.descripcion }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <a href="{{ url_for('products.edit', product_id=producto.id) }}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-info-circle"></i> Información General</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Código:</th>
+                        <td><strong>{{ producto.codigo }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Descripción:</th>
+                        <td>{{ producto.descripcion }}</td>
+                    </tr>
+                    <tr>
+                        <th>Categoría:</th>
+                        <td>
+                            {% if producto.item_group %}
+                            <span class="badge" style="background-color: {{ producto.item_group.color or '#6c757d' }}">
+                                {% if producto.item_group.icon %}<i class="bi bi-{{ producto.item_group.icon }}"></i>{% endif %}
+                                {{ producto.item_group.name }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">Sin categoría</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Proveedor:</th>
+                        <td>
+                            {% if producto.proveedor %}
+                            {{ producto.proveedor.nombre }}
+                            {% else %}
+                            <span class="text-muted">Sin proveedor</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-cash-stack"></i> Información de Stock y Precios</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-borderless">
+                    <tr>
+                        <th width="40%">Stock Actual:</th>
+                        <td>
+                            <span class="badge {% if producto.reorder_point and producto.stock <= producto.reorder_point %}bg-danger{% elif producto.stock < 10 %}bg-danger{% elif producto.stock < 50 %}bg-warning{% else %}bg-success{% endif %} fs-5">
+                                {{ producto.stock }} unidades
+                            </span>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Precio (USD):</th>
+                        <td><strong>${{ '%.2f'|format(producto.precio_dolares or 0) }}</strong></td>
+                    </tr>
+                    <tr>
+                        <th>Factor de Ajuste:</th>
+                        <td>{{ '%.2f'|format(producto.factor_ajuste or 1.0) }}</td>
+                    </tr>
+                    {% if producto.reorder_point %}
+                    <tr>
+                        <th>Punto de Reorden:</th>
+                        <td>
+                            <span class="badge bg-info">{{ producto.reorder_point }} unidades</span>
+                        </td>
+                    </tr>
+                    {% endif %}
+                    {% if producto.reorder_quantity %}
+                    <tr>
+                        <th>Cantidad de Reorden:</th>
+                        <td>{{ producto.reorder_quantity }} unidades</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5><i class="bi bi-clock-history"></i> Historial de Movimientos</h5>
+    </div>
+    <div class="card-body">
+        {% if movements %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Cantidad</th>
+                        <th>Descripción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movement in movements[:10] %}
+                    <tr>
+                        <td>{{ movement.fecha.strftime('%Y-%m-%d') if movement.fecha else '-' }}</td>
+                        <td>
+                            <span class="badge {% if movement.tipo.upper() == 'ENTRADA' %}bg-success{% elif movement.tipo.upper() == 'SALIDA' %}bg-danger{% else %}bg-warning{% endif %}">
+                                {{ movement.tipo.upper() }}
+                            </span>
+                        </td>
+                        <td>{{ movement.cantidad }}</td>
+                        <td>{{ movement.descripcion or '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% if movements|length > 10 %}
+        <div class="text-center mt-3">
+            <a href="{{ url_for('movements.product_history', product_id=producto.id) }}" class="btn btn-outline-primary">
+                <i class="bi bi-list"></i> Ver historial completo ({{ movements|length }} movimientos)
+            </a>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay movimientos registrados para este producto.
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card mt-4">
+    <div class="card-header">
+        <h5><i class="bi bi-calendar-event"></i> Información de Auditoría</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>Creado:</strong> {{ producto.created_at.strftime('%Y-%m-%d %H:%M') if producto.created_at else '-' }}</p>
+                {% if producto.creator %}
+                <p><strong>Creado por:</strong> {{ producto.creator.username }}</p>
+                {% endif %}
+            </div>
+            <div class="col-md-6">
+                <p><strong>Última actualización:</strong> {{ producto.updated_at.strftime('%Y-%m-%d %H:%M') if producto.updated_at else '-' }}</p>
+                {% if producto.updater %}
+                <p><strong>Actualizado por:</strong> {{ producto.updater.username }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
