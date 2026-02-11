@@ -14,90 +14,112 @@
     </div>
 </div>
 
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('item_groups.index') }}" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" name="q" class="form-control" placeholder="Buscar categoría por nombre o descripción..." value="{{ query or '' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+        </form>
+        {% if query %}
+        <div class="mt-2">
+            <a href="{{ url_for('item_groups.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Limpiar búsqueda
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
 {% if groups %}
 <div class="card">
     <div class="card-body">
-        <div class="list-group">
-            {% for group in groups %}
-            <div class="list-group-item">
-                <div class="d-flex w-100 justify-content-between align-items-center">
-                    <div>
-                        {% if group.icon %}
-                        <i class="bi bi-{{ group.icon }}"></i>
-                        {% endif %}
-                        <strong {% if group.color %}style="color: {{ group.color }}"{% endif %}>
-                            {{ group.name }}
-                        </strong>
-                        {% if group.description %}
-                        <br><small class="text-muted">{{ group.description }}</small>
-                        {% endif %}
-                        <br><small class="text-muted">
-                            <i class="bi bi-box"></i> {{ group.products|length }} productos
-                        </small>
-                    </div>
-                    <div class="btn-group btn-group-sm" role="group">
-                        <a href="{{ url_for('item_groups.view', group_id=group.id) }}" class="btn btn-info" title="Ver">
-                            <i class="bi bi-eye"></i>
-                        </a>
-                        <a href="{{ url_for('item_groups.edit', group_id=group.id) }}" class="btn btn-warning" title="Editar">
-                            <i class="bi bi-pencil"></i>
-                        </a>
-                        <button type="button" class="btn btn-danger" title="Eliminar" 
-                                onclick="if(confirm('¿Está seguro de eliminar esta categoría?')) { document.getElementById('delete-form-{{ group.id }}').submit(); }">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                    <form id="delete-form-{{ group.id }}" method="post" action="{{ url_for('item_groups.delete', group_id=group.id) }}" style="display: none;">
-                    </form>
-                </div>
-                
-                {% if group.children %}
-                <div class="ms-4 mt-2">
-                    {% for child in group.children %}
-                    <div class="list-group-item border-start">
-                        <div class="d-flex w-100 justify-content-between align-items-center">
-                            <div>
-                                {% if child.icon %}
-                                <i class="bi bi-{{ child.icon }}"></i>
-                                {% endif %}
-                                <strong {% if child.color %}style="color: {{ child.color }}"{% endif %}>
-                                    {{ child.name }}
-                                </strong>
-                                {% if child.description %}
-                                <br><small class="text-muted">{{ child.description }}</small>
-                                {% endif %}
-                                <br><small class="text-muted">
-                                    <i class="bi bi-box"></i> {{ child.products|length }} productos
-                                </small>
-                            </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Categoría Padre</th>
+                        <th>Productos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in groups %}
+                    <tr>
+                        <td>
+                            {% if group.icon %}
+                            <i class="bi bi-{{ group.icon }}"></i>
+                            {% endif %}
+                            <strong {% if group.color %}style="color: {{ group.color }}"{% endif %}>
+                                {{ group.name }}
+                            </strong>
+                        </td>
+                        <td>
+                            {% if group.description %}
+                            {{ group.description }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if group.parent %}
+                            <span class="badge bg-secondary">{{ group.parent.name }}</span>
+                            {% else %}
+                            <span class="text-muted">Raíz</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-info">
+                                <i class="bi bi-box"></i> {{ group.get_product_count() }}
+                            </span>
+                        </td>
+                        <td>
                             <div class="btn-group btn-group-sm" role="group">
-                                <a href="{{ url_for('item_groups.view', group_id=child.id) }}" class="btn btn-info" title="Ver">
+                                <a href="{{ url_for('item_groups.view', group_id=group.id) }}" class="btn btn-info" title="Ver">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{{ url_for('item_groups.edit', group_id=child.id) }}" class="btn btn-warning" title="Editar">
+                                <a href="{{ url_for('item_groups.edit', group_id=group.id) }}" class="btn btn-warning" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <button type="button" class="btn btn-danger" title="Eliminar" 
-                                        onclick="if(confirm('¿Está seguro de eliminar esta categoría?')) { document.getElementById('delete-form-{{ child.id }}').submit(); }">
+                                        onclick="if(confirm('¿Está seguro de eliminar esta categoría?')) { document.getElementById('delete-form-{{ group.id }}').submit(); }">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>
-                            <form id="delete-form-{{ child.id }}" method="post" action="{{ url_for('item_groups.delete', group_id=child.id) }}" style="display: none;">
+                            <form id="delete-form-{{ group.id }}" method="post" action="{{ url_for('item_groups.delete', group_id=group.id) }}" style="display: none;">
                             </form>
-                        </div>
-                    </div>
+                        </td>
+                    </tr>
                     {% endfor %}
-                </div>
-                {% endif %}
-            </div>
-            {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="mt-3">
+            <p class="text-muted">
+                <i class="bi bi-info-circle"></i> 
+                Total de categorías: <strong>{{ groups|length }}</strong>
+            </p>
         </div>
     </div>
 </div>
 {% else %}
 <div class="alert alert-info">
-    <i class="bi bi-info-circle"></i> No hay categorías creadas. 
+    <i class="bi bi-info-circle"></i> 
+    {% if query %}
+    No se encontraron categorías que coincidan con "{{ query }}".
+    <a href="{{ url_for('item_groups.index') }}" class="alert-link">Ver todas las categorías</a>
+    {% else %}
+    No hay categorías creadas. 
     <a href="{{ url_for('item_groups.create') }}" class="alert-link">Crear primera categoría</a>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

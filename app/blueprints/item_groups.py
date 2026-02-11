@@ -13,18 +13,26 @@ item_groups_bp = Blueprint('item_groups', __name__)
 @item_groups_bp.route('/')
 @login_required
 def index():
-    """List all item groups."""
+    """List all item groups with search."""
     try:
+        # Get search query
+        query = request.args.get('q', '').strip()
+        
         item_group_service = ItemGroupService()
         
-        # Get root groups (no parent)
-        root_groups = item_group_service.get_root_groups()
+        if query:
+            # Search in all groups
+            all_groups = item_group_service.get_all_groups()
+            groups = [g for g in all_groups if query.lower() in g.name.lower() or (g.description and query.lower() in g.description.lower())]
+        else:
+            # Get all groups ordered by name
+            groups = item_group_service.get_all_groups()
         
-        return render_template('item_groups.html', groups=root_groups)
+        return render_template('item_groups.html', groups=groups, query=query)
     
     except Exception as e:
         flash(f'Error al cargar categorías: {str(e)}', 'error')
-        return render_template('item_groups.html', groups=[])
+        return render_template('item_groups.html', groups=[], query='')
 
 
 @item_groups_bp.route('/create', methods=['GET', 'POST'])
