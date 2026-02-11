@@ -65,28 +65,28 @@
                     <tr>
                         <!-- Existencia Inicial -->
                         <th class="text-end">Cantidad</th>
-                        <th class="text-end">Costo Unit.</th>
-                        <th class="text-end">Monto</th>
+                        <th class="text-end">Costo Unit. (Bs)</th>
+                        <th class="text-end">Monto (Bs)</th>
                         <!-- Entradas -->
                         <th class="text-end">Cantidad</th>
-                        <th class="text-end">Costo Unit.</th>
-                        <th class="text-end">Monto</th>
+                        <th class="text-end">Costo Unit. (Bs)</th>
+                        <th class="text-end">Monto (Bs)</th>
                         <!-- Salidas -->
                         <th class="text-end">Cantidad</th>
-                        <th class="text-end">Costo Unit.</th>
-                        <th class="text-end">Monto</th>
+                        <th class="text-end">Costo Unit. (Bs)</th>
+                        <th class="text-end">Monto (Bs)</th>
                         <!-- Autoconsumos -->
                         <th class="text-end">Cantidad</th>
-                        <th class="text-end">Costo Unit.</th>
-                        <th class="text-end">Monto</th>
+                        <th class="text-end">Costo Unit. (Bs)</th>
+                        <th class="text-end">Monto (Bs)</th>
                         <!-- Retiro -->
                         <th class="text-end">Cantidad</th>
-                        <th class="text-end">Costo Unit.</th>
-                        <th class="text-end">Monto</th>
+                        <th class="text-end">Costo Unit. (Bs)</th>
+                        <th class="text-end">Monto (Bs)</th>
                         <!-- Inv. Final -->
                         <th class="text-end">Cantidad</th>
-                        <th class="text-end">Costo Unit.</th>
-                        <th class="text-end">Monto</th>
+                        <th class="text-end">Costo Unit. (Bs)</th>
+                        <th class="text-end">Monto (Bs)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -98,54 +98,54 @@
                         
                         <!-- Existencia Inicial -->
                         <td class="text-end">{{ row['Existencia Inicial - Cantidad'] }}</td>
-                        <td class="text-end">${{ '%.2f'|format(row['Existencia Inicial - Costo Unitario']) }}</td>
-                        <td class="text-end">${{ '%.2f'|format(row['Existencia Inicial - Monto']) }}</td>
+                        <td class="text-end">{{ '%.2f'|format(row['Existencia Inicial - Costo Unitario (Bs)']) }} Bs</td>
+                        <td class="text-end">{{ '%.2f'|format(row['Existencia Inicial - Monto (Bs)']) }} Bs</td>
                         
                         <!-- Entradas -->
                         <td class="text-end {% if row['Entradas - Cantidad'] > 0 %}text-success fw-bold{% endif %}">
                             {{ row['Entradas - Cantidad'] }}
                         </td>
-                        <td class="text-end">${{ '%.2f'|format(row['Entradas - Costo Unitario']) }}</td>
-                        <td class="text-end {% if row['Entradas - Monto'] > 0 %}text-success{% endif %}">
-                            ${{ '%.2f'|format(row['Entradas - Monto']) }}
+                        <td class="text-end">{{ '%.2f'|format(row['Entradas - Costo Unitario (Bs)']) }} Bs</td>
+                        <td class="text-end {% if row['Entradas - Monto (Bs)'] > 0 %}text-success{% endif %}">
+                            {{ '%.2f'|format(row['Entradas - Monto (Bs)']) }} Bs
                         </td>
                         
                         <!-- Salidas -->
                         <td class="text-end {% if row['Salidas - Cantidad'] > 0 %}text-danger fw-bold{% endif %}">
                             {{ row['Salidas - Cantidad'] }}
                         </td>
-                        <td class="text-end">${{ '%.2f'|format(row['Salidas - Costo Unitario']) }}</td>
-                        <td class="text-end {% if row['Salidas - Monto'] > 0 %}text-danger{% endif %}">
-                            ${{ '%.2f'|format(row['Salidas - Monto']) }}
+                        <td class="text-end">{{ '%.2f'|format(row['Salidas - Costo Unitario (Bs)']) }} Bs</td>
+                        <td class="text-end {% if row['Salidas - Monto (Bs)'] > 0 %}text-danger{% endif %}">
+                            {{ '%.2f'|format(row['Salidas - Monto (Bs)']) }} Bs
                         </td>
                         
                         <!-- Autoconsumos -->
                         <td class="text-end text-muted">{{ row['Autoconsumos - Cantidad'] }}</td>
-                        <td class="text-end text-muted">${{ '%.2f'|format(row['Autoconsumos - Costo Unitario']) }}</td>
-                        <td class="text-end text-muted">${{ '%.2f'|format(row['Autoconsumos - Monto']) }}</td>
+                        <td class="text-end text-muted">{{ '%.2f'|format(row['Autoconsumos - Costo Unitario (Bs)']) }} Bs</td>
+                        <td class="text-end text-muted">{{ '%.2f'|format(row['Autoconsumos - Monto (Bs)']) }} Bs</td>
                         
                         <!-- Retiro -->
                         <td class="text-end text-muted">{{ row['Retiro - Cantidad'] }}</td>
-                        <td class="text-end text-muted">${{ '%.2f'|format(row['Retiro - Costo Unitario']) }}</td>
-                        <td class="text-end text-muted">${{ '%.2f'|format(row['Retiro - Monto']) }}</td>
+                        <td class="text-end text-muted">{{ '%.2f'|format(row['Retiro - Costo Unitario (Bs)']) }} Bs</td>
+                        <td class="text-end text-muted">{{ '%.2f'|format(row['Retiro - Monto (Bs)']) }} Bs</td>
                         
                         <!-- Inv. Final -->
                         <td class="text-end fw-bold">{{ row['Inv.final - Cantidad'] }}</td>
-                        <td class="text-end">${{ '%.2f'|format(row['Inv.final - Costo Unitario']) }}</td>
-                        <td class="text-end fw-bold">${{ '%.2f'|format(row['Inv.final - Monto']) }}</td>
+                        <td class="text-end">{{ '%.2f'|format(row['Inv.final - Costo Unitario (Bs)']) }} Bs</td>
+                        <td class="text-end fw-bold">{{ '%.2f'|format(row['Inv.final - Monto (Bs)']) }} Bs</td>
                     </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot class="table-secondary">
                     <tr>
                         <th colspan="5" class="text-end">TOTALES:</th>
-                        <th class="text-end">${{ '%.2f'|format(totals.initial_amount) }}</th>
+                        <th class="text-end">{{ '%.2f'|format(totals.initial_amount) }} Bs</th>
                         <th colspan="2"></th>
-                        <th class="text-end text-success">${{ '%.2f'|format(totals.entries_amount) }}</th>
+                        <th class="text-end text-success">{{ '%.2f'|format(totals.entries_amount) }} Bs</th>
                         <th colspan="2"></th>
-                        <th class="text-end text-danger">${{ '%.2f'|format(totals.exits_amount) }}</th>
+                        <th class="text-end text-danger">{{ '%.2f'|format(totals.exits_amount) }} Bs</th>
                         <th colspan="8"></th>
-                        <th class="text-end fw-bold">${{ '%.2f'|format(totals.final_amount) }}</th>
+                        <th class="text-end fw-bold">{{ '%.2f'|format(totals.final_amount) }} Bs</th>
                     </tr>
                 </tfoot>
             </table>
