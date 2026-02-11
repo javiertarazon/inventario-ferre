@@ -183,9 +183,18 @@ class ItemGroupService:
             return group
         return None
     
-    def get_all_groups(self) -> List[ItemGroup]:
-        """Get all active item groups."""
-        return self.item_group_repo.get_active_groups()
+    def get_all_groups(self):
+        """
+        Get all active item groups without pagination.
+        
+        Returns:
+            List of all active item groups
+        """
+        try:
+            return self.item_group_repo.get_all_list()
+        except SQLAlchemyError as e:
+            current_app.logger.error(f"Database error getting all item groups: {str(e)}")
+            raise DatabaseError(f"Error al obtener categorías: {str(e)}")
     
     def get_root_groups(self) -> List[ItemGroup]:
         """Get root level groups."""
@@ -196,6 +205,8 @@ class ItemGroupService:
         root_groups = self.get_root_groups()
         
         def build_tree(group: ItemGroup) -> Dict[str, Any]:
+            # Get active children as a list
+            active_children = [c for c in group.children if c.deleted_at is None]
             return {
                 'id': group.id,
                 'name': group.name,
@@ -203,20 +214,7 @@ class ItemGroupService:
                 'color': group.color,
                 'icon': group.icon,
                 'product_count': group.get_product_count(),
-                'children': [build_tree(child) for child in group.children if child.deleted_at is None]
+                'children': [build_tree(child) for child in active_children]
             }
         
         return [build_tree(group) for group in root_groups]
-
-    def get_all_groups(self):
-        """
-        Get all active item groups without pagination.
-        
-        Returns:
-            List of all active item groups
-        """
-        try:
-            return self.item_group_repo.get_all()
-        except SQLAlchemyError as e:
-            current_app.logger.error(f"Database error getting all item groups: {str(e)}")
-            raise DatabaseError(f"Error al obtener categorías: {str(e)}")

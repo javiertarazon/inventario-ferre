@@ -46,10 +46,10 @@ def index():
 def create():
     """Create new movement."""
     if request.method == 'GET':
-        # Get products for dropdown
+        # Get products for dropdown - use get_all_products instead of search with high limit
         product_service = ProductService()
-        products_result = product_service.search_products(page=1, per_page=1000)
-        return render_template('movimientos_form.html', movimiento=None, productos=products_result.items)
+        productos = product_service.get_all_products()
+        return render_template('movimientos_form.html', movimiento=None, productos=productos)
     
     try:
         # Get form data
@@ -79,20 +79,20 @@ def create():
     except ValidationError as e:
         flash(f'Error de validación: {e.message}', 'error')
         product_service = ProductService()
-        products_result = product_service.search_products(page=1, per_page=1000)
-        return render_template('movimientos_form.html', movimiento=None, productos=products_result.items, form_data=request.form)
+        productos = product_service.get_all_products()
+        return render_template('movimientos_form.html', movimiento=None, productos=productos, form_data=request.form)
     
     except NotFoundError as e:
         flash(f'Error: {e.message}', 'error')
         product_service = ProductService()
-        products_result = product_service.search_products(page=1, per_page=1000)
-        return render_template('movimientos_form.html', movimiento=None, productos=products_result.items, form_data=request.form)
+        productos = product_service.get_all_products()
+        return render_template('movimientos_form.html', movimiento=None, productos=productos, form_data=request.form)
     
     except (BusinessLogicError, DatabaseError) as e:
         flash(f'Error: {e.message}', 'error')
         product_service = ProductService()
-        products_result = product_service.search_products(page=1, per_page=1000)
-        return render_template('movimientos_form.html', movimiento=None, productos=products_result.items, form_data=request.form)
+        productos = product_service.get_all_products()
+        return render_template('movimientos_form.html', movimiento=None, productos=productos, form_data=request.form)
 
 
 @movements_bp.route('/<int:movement_id>')

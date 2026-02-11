@@ -201,14 +201,14 @@ class ValidationService:
             except (ValueError, TypeError):
                 errors.append("El ID del producto debe ser un número entero válido")
         
-        # Validate tipo_movimiento
-        tipo_movimiento = data.get('tipo_movimiento', '').strip().upper()
-        if not tipo_movimiento:
+        # Validate tipo (accept both 'tipo' and 'tipo_movimiento' for compatibility)
+        tipo = data.get('tipo') or data.get('tipo_movimiento', '').strip().upper()
+        if not tipo:
             errors.append("El tipo de movimiento es requerido")
-        elif tipo_movimiento not in ['ENTRADA', 'SALIDA', 'AJUSTE']:
+        elif tipo not in ['ENTRADA', 'SALIDA', 'AJUSTE']:
             errors.append("El tipo de movimiento debe ser: ENTRADA, SALIDA o AJUSTE")
         else:
-            validated_data['tipo_movimiento'] = tipo_movimiento
+            validated_data['tipo'] = tipo
         
         # Validate cantidad
         cantidad = data.get('cantidad')
@@ -238,13 +238,13 @@ class ValidationService:
             else:
                 validated_data['fecha'] = fecha
         
-        # Validate motivo
-        motivo = data.get('motivo', '').strip()
-        if motivo:
-            if len(motivo) > 500:
-                errors.append("El motivo no puede exceder 500 caracteres")
+        # Validate descripcion (accept both 'descripcion' and 'motivo' for compatibility)
+        descripcion = data.get('descripcion') or data.get('motivo', '').strip()
+        if descripcion:
+            if len(descripcion) > 500:
+                errors.append("La descripción no puede exceder 500 caracteres")
             else:
-                validated_data['motivo'] = self.sanitize_string(motivo)
+                validated_data['descripcion'] = self.sanitize_string(descripcion)
         
         if errors:
             raise ValidationError("; ".join(errors))

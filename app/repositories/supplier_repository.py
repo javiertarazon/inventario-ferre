@@ -34,3 +34,15 @@ class SupplierRepository(BaseRepository[Proveedor]):
             return PaginatedResult(items, total, page, per_page)
         except SQLAlchemyError as e:
             raise DatabaseError("Error retrieving active suppliers", e)
+    
+    def get_all_list(self):
+        """
+        Get all active suppliers as a simple list (no pagination).
+        
+        Returns:
+            List of all active suppliers
+        """
+        try:
+            return db.session.query(Proveedor).filter(Proveedor.deleted_at.is_(None)).all()
+        except SQLAlchemyError as e:
+            raise DatabaseError("Error retrieving suppliers list", e)

@@ -245,7 +245,7 @@ class SupplierService:
             List of all active suppliers
         """
         try:
-            return self.supplier_repo.get_all()
+            return self.supplier_repo.get_all_list()
         except Exception as e:
             current_app.logger.error(f"Error getting all suppliers: {str(e)}")
             raise BusinessLogicError(f"Error al obtener proveedores: {str(e)}")

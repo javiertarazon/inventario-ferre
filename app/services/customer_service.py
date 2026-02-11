@@ -245,7 +245,7 @@ class CustomerService:
             List of all active customers
         """
         try:
-            return self.customer_repo.get_all()
+            return self.customer_repo.get_all_list()
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error getting all customers: {str(e)}")
             raise DatabaseError(f"Error al obtener clientes: {str(e)}")

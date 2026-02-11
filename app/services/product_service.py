@@ -334,7 +334,7 @@ class ProductService:
             List of all active products
         """
         try:
-            return self.product_repo.get_all()
+            return self.product_repo.get_all_list()
         except SQLAlchemyError as e:
             current_app.logger.error(f"Database error getting all products: {str(e)}")
             raise DatabaseError(f"Error al obtener productos: {str(e)}")

@@ -17,15 +17,45 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" action="{{ url_for('products.index') }}" class="row g-3">
-            <div class="col-md-10">
-                <input type="text" name="q" class="form-control" placeholder="Buscar por código o descripción..." value="{{ query or '' }}">
+            <div class="col-md-3">
+                <label for="search_by" class="form-label">Buscar por:</label>
+                <select name="search_by" id="search_by" class="form-select">
+                    <option value="all" {% if search_by == 'all' %}selected{% endif %}>Código o Descripción</option>
+                    <option value="codigo" {% if search_by == 'codigo' %}selected{% endif %}>Solo Código</option>
+                    <option value="descripcion" {% if search_by == 'descripcion' %}selected{% endif %}>Solo Descripción</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="item_group_id" class="form-label">Categoría:</label>
+                <select name="item_group_id" id="item_group_id" class="form-select">
+                    <option value="">Todas las categorías</option>
+                    {% if categories %}
+                        {% for category in categories %}
+                        <option value="{{ category.id }}" {% if item_group_id == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="q" class="form-label">Término de búsqueda:</label>
+                <input type="text" name="q" id="q" class="form-control" placeholder="Buscar..." value="{{ query or '' }}">
             </div>
             <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
                 <button type="submit" class="btn btn-primary w-100">
                     <i class="bi bi-search"></i> Buscar
                 </button>
             </div>
         </form>
+        {% if query or item_group_id %}
+        <div class="mt-2">
+            <a href="{{ url_for('products.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle"></i> Limpiar filtros
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
@@ -106,14 +136,14 @@
     <ul class="pagination justify-content-center">
         {% if pagination.has_prev %}
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, q=query) }}">Anterior</a>
+            <a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, q=query, search_by=search_by, item_group_id=item_group_id) }}">Anterior</a>
         </li>
         {% endif %}
         
         {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
             {% if page_num %}
                 <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('products.index', page=page_num, q=query) }}">{{ page_num }}</a>
+                    <a class="page-link" href="{{ url_for('products.index', page=page_num, q=query, search_by=search_by, item_group_id=item_group_id) }}">{{ page_num }}</a>
                 </li>
             {% else %}
                 <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -122,7 +152,7 @@
         
         {% if pagination.has_next %}
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, q=query) }}">Siguiente</a>
+            <a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, q=query, search_by=search_by, item_group_id=item_group_id) }}">Siguiente</a>
         </li>
         {% endif %}
     </ul>

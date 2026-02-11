@@ -71,3 +71,12 @@ class CustomerRepository(BaseRepository[Customer]):
              self.model.tax_id.like(search))
         )
         return self._paginate(db_query, page, per_page)
+    
+    def get_all_list(self):
+        """
+        Get all active customers as a simple list (no pagination).
+        
+        Returns:
+            List of all active customers
+        """
+        return self.model.query.filter_by(deleted_at=None).all()

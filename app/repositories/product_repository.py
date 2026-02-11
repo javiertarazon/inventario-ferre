@@ -23,7 +23,7 @@ class ProductRepository(BaseRepository[Product]):
         
         Args:
             query: Search query for codigo or descripcion
-            filters: Additional filters (proveedor_id, etc.)
+            filters: Additional filters (search_by, item_group_id, proveedor_id, etc.)
             page: Page number
             per_page: Items per page
             
@@ -33,22 +33,42 @@ class ProductRepository(BaseRepository[Product]):
         try:
             q = db.session.query(Product).filter(Product.deleted_at.is_(None))
             
-            # Search in codigo and descripcion
+            # Search based on search_by filter
             if query:
-                search_filter = or_(
-                    Product.codigo.ilike(f'%{query}%'),
-                    Product.descripcion.ilike(f'%{query}%')
-                )
-                q = q.filter(search_filter)
+                search_by = filters.get('search_by', 'all') if filters else 'all'
+                
+                if search_by == 'codigo':
+                    # Search only by codigo
+                    q = q.filter(Product.codigo.ilike(f'%{query}%'))
+                elif search_by == 'descripcion':
+                    # Search only by descripcion
+                    q = q.filter(Product.descripcion.ilike(f'%{query}%'))
+                else:
+                    # Search in both codigo and descripcion (default)
+                    search_filter = or_(
+                        Product.codigo.ilike(f'%{query}%'),
+                        Product.descripcion.ilike(f'%{query}%')
+                    )
+                    q = q.filter(search_filter)
             
             # Apply additional filters
             if filters:
+                # Filter by category/item_group
+                if 'item_group_id' in filters and filters['item_group_id']:
+                    q = q.filter(Product.item_group_id == filters['item_group_id'])
+                
+                # Filter by supplier
                 if 'proveedor_id' in filters and filters['proveedor_id']:
                     q = q.filter(Product.proveedor_id == filters['proveedor_id'])
+                
+                # Filter by stock range
                 if 'min_stock' in filters:
                     q = q.filter(Product.stock >= filters['min_stock'])
                 if 'max_stock' in filters:
                     q = q.filter(Product.stock <= filters['max_stock'])
+            
+            # Order by codigo
+            q = q.order_by(Product.codigo)
             
             total = q.count()
             items = q.offset((page - 1) * per_page).limit(per_page).all()
@@ -164,3 +184,15 @@ class ProductRepository(BaseRepository[Product]):
         ).order_by(self.model.codigo).paginate(
             page=page, per_page=per_page, error_out=False
         )
+    
+    def get_all_list(self) -> List[Product]:
+        """
+        Get all active products as a simple list (no pagination).
+        
+        Returns:
+            List of all active products
+        """
+        try:
+            return db.session.query(Product).filter(Product.deleted_at.is_(None)).all()
+        except SQLAlchemyError as e:
+            raise DatabaseError("Error retrieving products list", e)

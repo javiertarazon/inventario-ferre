@@ -31,9 +31,18 @@ class MovementRepository(BaseRepository[Movimiento]):
         except SQLAlchemyError as e:
             raise DatabaseError("Error retrieving movements by date range", e)
     
-    def get_by_product(self, producto_id: int, 
-                      page: int = 1, per_page: int = 50) -> PaginatedResult[Movimiento]:
-        """Get movements by product."""
+    def get_by_product(self, producto_id: int) -> List[Movimiento]:
+        """Get all movements by product (no pagination)."""
+        try:
+            return db.session.query(Movimiento).filter(
+                Movimiento.producto_id == producto_id
+            ).order_by(Movimiento.fecha.desc()).all()
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Error retrieving movements for product {producto_id}", e)
+    
+    def get_by_product_paginated(self, producto_id: int, 
+                                 page: int = 1, per_page: int = 50) -> PaginatedResult[Movimiento]:
+        """Get movements by product with pagination."""
         try:
             q = db.session.query(Movimiento).filter(
                 Movimiento.producto_id == producto_id

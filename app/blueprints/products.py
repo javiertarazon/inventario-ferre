@@ -18,17 +18,34 @@ def index():
     try:
         # Get query parameters
         query = request.args.get('q', '')
+        search_by = request.args.get('search_by', 'all')
+        item_group_id = request.args.get('item_group_id', type=int)
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
+        # Build filters
+        filters = {
+            'search_by': search_by
+        }
+        if item_group_id:
+            filters['item_group_id'] = item_group_id
+        
         # Get products
         product_service = ProductService()
-        result = product_service.search_products(query=query, page=page, per_page=per_page)
+        result = product_service.search_products(query=query, filters=filters, page=page, per_page=per_page)
+        
+        # Get categories for filter dropdown
+        from app.services import ItemGroupService
+        item_group_service = ItemGroupService()
+        categories = item_group_service.get_all_groups()
         
         return render_template('productos.html',
                              productos=result.items,
                              pagination=result,
-                             query=query)
+                             query=query,
+                             search_by=search_by,
+                             item_group_id=item_group_id,
+                             categories=categories)
     
     except Exception as e:
         flash(f'Error al cargar productos: {str(e)}', 'error')

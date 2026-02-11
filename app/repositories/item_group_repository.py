@@ -54,3 +54,12 @@ class ItemGroupRepository(BaseRepository[ItemGroup]):
             List of active item groups
         """
         return self.model.query.filter_by(deleted_at=None).order_by(ItemGroup.name).all()
+    
+    def get_all_list(self):
+        """
+        Get all active item groups as a simple list (no pagination).
+        
+        Returns:
+            List of all active item groups
+        """
+        return self.model.query.filter_by(deleted_at=None).order_by(ItemGroup.name).all()

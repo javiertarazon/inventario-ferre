@@ -47,7 +47,9 @@ class ItemGroup(db.Model):
     def get_all_children(self):
         """Get all children recursively."""
         children = []
-        for child in self.children:
+        # Filter out deleted children
+        active_children = [c for c in self.children if c.deleted_at is None]
+        for child in active_children:
             children.append(child)
             children.extend(child.get_all_children())
         return children
@@ -55,7 +57,9 @@ class ItemGroup(db.Model):
     def get_product_count(self):
         """Get total number of products in this category and subcategories."""
         count = self.products.filter_by(deleted_at=None).count()
-        for child in self.children:
+        # Filter out deleted children
+        active_children = [c for c in self.children if c.deleted_at is None]
+        for child in active_children:
             count += child.get_product_count()
         return count
     

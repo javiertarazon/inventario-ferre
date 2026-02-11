@@ -107,6 +107,18 @@ class BaseRepository(Generic[T]):
         except SQLAlchemyError as e:
             raise DatabaseError(f"Error retrieving {self.model.__name__} list", e)
     
+    def get_all_list(self) -> List[T]:
+        """
+        Get all entities as a simple list (no pagination).
+        
+        Returns:
+            List of all entities
+        """
+        try:
+            return db.session.query(self.model).all()
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Error retrieving {self.model.__name__} list", e)
+    
     def create(self, entity: T) -> T:
         """
         Create new entity.
