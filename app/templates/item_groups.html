@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Categorías - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-tags"></i> Categorías de Productos</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('item_groups.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Categoría
+        </a>
+    </div>
+</div>
+
+{% if groups %}
+<div class="card">
+    <div class="card-body">
+        <div class="list-group">
+            {% for group in groups %}
+            <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between align-items-center">
+                    <div>
+                        {% if group.icon %}
+                        <i class="bi bi-{{ group.icon }}"></i>
+                        {% endif %}
+                        <strong {% if group.color %}style="color: {{ group.color }}"{% endif %}>
+                            {{ group.name }}
+                        </strong>
+                        {% if group.description %}
+                        <br><small class="text-muted">{{ group.description }}</small>
+                        {% endif %}
+                        <br><small class="text-muted">
+                            <i class="bi bi-box"></i> {{ group.products|length }} productos
+                        </small>
+                    </div>
+                    <div class="btn-group btn-group-sm" role="group">
+                        <a href="{{ url_for('item_groups.view', group_id=group.id) }}" class="btn btn-info" title="Ver">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{{ url_for('item_groups.edit', group_id=group.id) }}" class="btn btn-warning" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <button type="button" class="btn btn-danger" title="Eliminar" 
+                                onclick="if(confirm('¿Está seguro de eliminar esta categoría?')) { document.getElementById('delete-form-{{ group.id }}').submit(); }">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <form id="delete-form-{{ group.id }}" method="post" action="{{ url_for('item_groups.delete', group_id=group.id) }}" style="display: none;">
+                    </form>
+                </div>
+                
+                {% if group.children %}
+                <div class="ms-4 mt-2">
+                    {% for child in group.children %}
+                    <div class="list-group-item border-start">
+                        <div class="d-flex w-100 justify-content-between align-items-center">
+                            <div>
+                                {% if child.icon %}
+                                <i class="bi bi-{{ child.icon }}"></i>
+                                {% endif %}
+                                <strong {% if child.color %}style="color: {{ child.color }}"{% endif %}>
+                                    {{ child.name }}
+                                </strong>
+                                {% if child.description %}
+                                <br><small class="text-muted">{{ child.description }}</small>
+                                {% endif %}
+                                <br><small class="text-muted">
+                                    <i class="bi bi-box"></i> {{ child.products|length }} productos
+                                </small>
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('item_groups.view', group_id=child.id) }}" class="btn btn-info" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('item_groups.edit', group_id=child.id) }}" class="btn btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger" title="Eliminar" 
+                                        onclick="if(confirm('¿Está seguro de eliminar esta categoría?')) { document.getElementById('delete-form-{{ child.id }}').submit(); }">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <form id="delete-form-{{ child.id }}" method="post" action="{{ url_for('item_groups.delete', group_id=child.id) }}" style="display: none;">
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No hay categorías creadas. 
+    <a href="{{ url_for('item_groups.create') }}" class="alert-link">Crear primera categoría</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,203 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Productos</h1>
+<form method="post" action="{{ url_for('importar_excel') }}" class="mb-3">
+    <button type="submit" class="btn btn-success">Importar Excel (Ferre-Exito)</button>
+</form>
+{% if confirmar_reemplazo %}
+<div class="alert alert-warning">
+    El código <strong>{{ codigo_reemplazo }}</strong> ya existe para el producto
+    <strong>{{ existente.descripcion }}</strong>. ¿Desea reemplazarlo y está seguro?
+</div>
+<form method="post" class="mb-4">
+    {{ form.hidden_tag() }}
+    {{ form.confirm_replace() }}
+    <button type="submit" class="btn btn-danger">Sí, reemplazar</button>
+    <a class="btn btn-secondary" href="{{ url_for('productos') }}">Cancelar</a>
+</form>
+{% endif %}
+{% if editando %}
+<h3>Editar producto: {{ producto_edit.codigo }}</h3>
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        <label>{{ form.rubro.label }}</label>
+        <div class="d-flex gap-2 align-items-center">
+            {{ form.rubro(class="form-control", maxlength="1", style="max-width: 80px;") }}
+            <span>-</span>
+            {{ form.iniciales(class="form-control", maxlength="2", style="max-width: 100px;") }}
+            <span>-</span>
+            {{ form.numero(class="form-control", maxlength="2", style="max-width: 100px;") }}
+        </div>
+        <small>Ejemplo: A-MR-18</small>
+        {% for error in form.rubro.errors + form.iniciales.errors + form.numero.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.descripcion.label(class="form-label") }}
+        {{ form.descripcion(class="form-control") }}
+        {% for error in form.descripcion.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.stock.label(class="form-label") }}
+        {{ form.stock(class="form-control") }}
+        {% for error in form.stock.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.precio_dolares.label(class="form-label") }}
+        {{ form.precio_dolares(class="form-control", step="0.01") }}
+        {% for error in form.precio_dolares.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.factor_ajuste.label(class="form-label") }}
+        {{ form.factor_ajuste(class="form-control", step="0.0001") }}
+        {% for error in form.factor_ajuste.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.proveedor_id.label(class="form-label") }}
+        {{ form.proveedor_id(class="form-control") }}
+        <small>O crear nuevo:</small>
+        {{ form.nuevo_proveedor(class="form-control", placeholder="Nombre del nuevo proveedor") }}
+        {{ form.rif_nuevo(class="form-control mt-2", placeholder="RIF del nuevo proveedor") }}
+        {{ form.rubro_material_nuevo(class="form-control mt-2", placeholder="Rubro del material") }}
+    </div>
+    {{ form.submit(class="btn btn-primary", value="Guardar cambios") }}
+    <a href="{{ url_for('productos') }}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% else %}
+<form method="post">
+    {{ form.hidden_tag() }}
+    <div class="mb-3">
+        <label>{{ form.rubro.label }}</label>
+        <div class="d-flex gap-2 align-items-center">
+            {{ form.rubro(class="form-control", maxlength="1", style="max-width: 80px;") }}
+            <span>-</span>
+            {{ form.iniciales(class="form-control", maxlength="2", style="max-width: 100px;") }}
+            <span>-</span>
+            {{ form.numero(class="form-control", maxlength="2", style="max-width: 100px;") }}
+        </div>
+        <small>Ejemplo: A-MR-18</small>
+        {% for error in form.rubro.errors + form.iniciales.errors + form.numero.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.descripcion.label(class="form-label") }}
+        {{ form.descripcion(class="form-control") }}
+        {% for error in form.descripcion.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.stock.label(class="form-label") }}
+        {{ form.stock(class="form-control") }}
+        {% for error in form.stock.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.precio_dolares.label(class="form-label") }}
+        {{ form.precio_dolares(class="form-control", step="0.01") }}
+        {% for error in form.precio_dolares.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.factor_ajuste.label(class="form-label") }}
+        {{ form.factor_ajuste(class="form-control", step="0.0001") }}
+        {% for error in form.factor_ajuste.errors %}
+            <div class="text-danger">{{ error }}</div>
+        {% endfor %}
+    </div>
+    <div class="mb-3">
+        {{ form.proveedor_id.label(class="form-label") }}
+        {{ form.proveedor_id(class="form-control") }}
+        <small>O crear nuevo:</small>
+        {{ form.nuevo_proveedor(class="form-control", placeholder="Nombre del nuevo proveedor") }}
+        {{ form.rif_nuevo(class="form-control mt-2", placeholder="RIF del nuevo proveedor") }}
+        {{ form.rubro_material_nuevo(class="form-control mt-2", placeholder="Rubro del material") }}
+    </div>
+    {{ form.submit(class="btn btn-primary") }}
+</form>
+{% endif %}
+<h2>Lista de Productos</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Stock</th>
+            <th>Precio en Dólares</th>
+            <th>Precio en Bolívares</th>
+            <th>Precio Ajustado</th>
+            <th>Proveedor</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos.items %}
+        <tr>
+            <td>{{ producto.codigo }}</td>
+            <td>{{ producto.descripcion }}</td>
+            <td>{{ producto.stock }}</td>
+            <td>{{ '%.2f'|format(producto.precio_dolares or 0) }}</td>
+            <td>{{ '%.2f'|format((producto.precio_dolares or 0) * config.tasa_cambiaria) }}</td>
+            <td>{{ '%.2f'|format((producto.precio_dolares or 0) * config.tasa_cambiaria * producto.factor_ajuste) }}</td>
+            <td>{{ producto.proveedor.nombre if producto.proveedor else '' }}</td>
+            <td>
+                <a href="{{ url_for('editar_producto', producto_id=producto.id) }}" class="btn btn-sm btn-warning">Editar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<nav aria-label="Paginación de productos">
+    <ul class="pagination">
+        {% if productos.has_prev %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('productos', page=productos.prev_num) }}">Anterior</a></li>
+        {% endif %}
+        {% for page_num in productos.iter_pages() %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == productos.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('productos', page=page_num) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        {% if productos.has_next %}
+            <li class="page-item"><a class="page-link" href="{{ url_for('productos', page=productos.next_num) }}">Siguiente</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+<h2>Rubros y contenido</h2>
+{% if rubros %}
+    {% for rubro, items in rubros.items() %}
+    <div class="card mb-3">
+        <div class="card-header">
+            Rubro: <strong>{{ rubro }}</strong> ({{ items|length }} productos)
+        </div>
+        <div class="card-body">
+            <ul class="mb-0">
+                {% for p in items %}
+                <li>{{ p.codigo }} - {{ p.descripcion }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <p>No hay rubros registrados.</p>
+{% endif %}
+{% endblock %}

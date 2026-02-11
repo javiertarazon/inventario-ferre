@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Exportar</h1>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Exportar inventario completo</h5>
+        <form method="post">
+            <input type="hidden" name="tipo" value="general">
+            <button type="submit" class="btn btn-primary">Exportar completo</button>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Exportar inventario diario</h5>
+        <form method="post">
+            <input type="hidden" name="tipo" value="diario">
+            <div class="mb-3">
+                <label>Fecha</label>
+                <input type="date" name="fecha" class="form-control" required>
+            </div>
+            <button type="submit" class="btn btn-success">Exportar día</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

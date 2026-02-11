@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if producto else 'Nuevo' }} Producto - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-box"></i> {{ 'Editar Producto' if producto else 'Nuevo Producto' }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="codigo" class="form-label">Código del Producto</label>
+                        <input type="text" class="form-control" id="codigo" name="codigo" 
+                               value="{{ producto.codigo if producto else (form_data.codigo if form_data else '') }}"
+                               placeholder="Ej: A-BC-01 (dejar vacío para auto-generar)">
+                        <small class="form-text text-muted">Formato: X-XX-NN (Ej: A-BC-01). Dejar vacío para generar automáticamente.</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción *</label>
+                        <input type="text" class="form-control" id="descripcion" name="descripcion" required
+                               value="{{ producto.descripcion if producto else (form_data.descripcion if form_data else '') }}"
+                               maxlength="200">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="item_group_id" class="form-label">Categoría</label>
+                        <select class="form-select" id="item_group_id" name="item_group_id">
+                            <option value="">-- Sin Categoría --</option>
+                            {% for group in item_groups %}
+                            <option value="{{ group.id }}" 
+                                    {% if producto and producto.item_group_id == group.id %}selected{% endif %}
+                                    {% if form_data and form_data.item_group_id|int == group.id %}selected{% endif %}>
+                                {{ group.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                            ¿No encuentra la categoría? 
+                            <a href="{{ url_for('item_groups.create') }}" target="_blank">Crear nueva categoría</a>
+                        </small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="stock" class="form-label">Stock *</label>
+                                <input type="number" class="form-control" id="stock" name="stock" required min="0"
+                                       value="{{ producto.stock if producto else (form_data.stock if form_data else 0) }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="reorder_point" class="form-label">Punto de Reorden</label>
+                                <input type="number" class="form-control" id="reorder_point" name="reorder_point" min="0"
+                                       value="{{ producto.reorder_point if producto else (form_data.reorder_point if form_data else '') }}"
+                                       placeholder="Opcional">
+                                <small class="form-text text-muted">Alerta cuando stock sea menor</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="reorder_quantity" class="form-label">Cantidad a Reordenar</label>
+                                <input type="number" class="form-control" id="reorder_quantity" name="reorder_quantity" min="0"
+                                       value="{{ producto.reorder_quantity if producto else (form_data.reorder_quantity if form_data else '') }}"
+                                       placeholder="Opcional">
+                                <small class="form-text text-muted">Cantidad sugerida para reorden</small>
+                            </div>
+                        </div>
+                    </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="precio_dolares" class="form-label">Precio (USD) *</label>
+                                <input type="number" class="form-control" id="precio_dolares" name="precio_dolares" 
+                                       required min="0" step="0.01"
+                                       value="{{ '%.2f'|format(producto.precio_dolares) if producto else (form_data.precio_dolares if form_data else '0.00') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="factor_ajuste" class="form-label">Factor de Ajuste *</label>
+                                <input type="number" class="form-control" id="factor_ajuste" name="factor_ajuste" 
+                                       required min="0.01" step="0.01"
+                                       value="{{ '%.2f'|format(producto.factor_ajuste) if producto else (form_data.factor_ajuste if form_data else '1.00') }}">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="proveedor_id" class="form-label">Proveedor</label>
+                        <select class="form-select" id="proveedor_id" name="proveedor_id">
+                            <option value="">-- Seleccionar Proveedor --</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}" 
+                                    {% if producto and producto.proveedor_id == supplier.id %}selected{% endif %}
+                                    {% if form_data and form_data.proveedor_id|int == supplier.id %}selected{% endif %}>
+                                {{ supplier.nombre }} ({{ supplier.rif }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                            ¿No encuentra el proveedor? 
+                            <a href="{{ url_for('suppliers.create') }}" target="_blank">Crear nuevo proveedor</a>
+                        </small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {{ 'Actualizar' if producto else 'Crear' }} Producto
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

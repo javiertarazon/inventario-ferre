@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Inventario</h1>
+
+<div class="mb-3">
+    <div class="d-flex gap-2 mb-3">
+        <a href="{{ url_for('inventario', view='completo', reset=1) }}" class="btn btn-outline-primary {% if view != 'diario' %}active{% endif %}">Inventario completo</a>
+        <a href="{{ url_for('inventario', view='diario', reset=1) }}" class="btn btn-outline-primary {% if view == 'diario' %}active{% endif %}">Inventario diario</a>
+        <a href="{{ url_for('inventario', view=view, reset=1) }}" class="btn btn-outline-secondary">Limpiar</a>
+        {% if view == 'diario' %}
+            {% if fecha and tiene_movimientos %}
+                <a href="{{ url_for('exportar_dia', fecha=fecha.strftime('%Y-%m-%d')) }}" class="btn btn-success">Exportar día</a>
+            {% else %}
+                <button class="btn btn-success" disabled>Exportar día</button>
+            {% endif %}
+        {% else %}
+            {% if tiene_productos %}
+                <a href="{{ url_for('exportar_inventario_completo') }}" class="btn btn-success">Exportar inventario completo</a>
+            {% else %}
+                <button class="btn btn-success" disabled>Exportar inventario completo</button>
+            {% endif %}
+        {% endif %}
+    </div>
+
+    {% if view == 'diario' %}
+        <form method="get" class="d-flex gap-3 align-items-end">
+            <input type="hidden" name="view" value="diario">
+            <div>
+                <label>Seleccionar fecha guardada</label>
+                <select name="fecha" class="form-control" style="min-width: 200px;">
+                    <option value="">Seleccione una fecha</option>
+                    {% for c in fechas_disponibles %}
+                        <option value="{{ c.fecha.strftime('%Y-%m-%d') }}" {% if fecha and fecha.isoformat() == c.fecha.isoformat() %}selected{% endif %}>{{ c.fecha.strftime('%Y-%m-%d') }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label>O ingrese fecha específica</label>
+                <input type="date" name="fecha_especifica" class="form-control" value="{{ fecha_especifica or '' }}" style="min-width: 200px;">
+            </div>
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
+    {% endif %}
+</div>
+
+{% if view == 'diario' and fecha %}
+    <h2>Movimientos del {{ fecha }}</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                <th>Código Producto</th>
+                <th>Descripción</th>
+                <th>Entrada</th>
+                <th>Salida</th>
+                <th>Stock Actual</th>
+                <th>Costo</th>
+                <th>Factor Cambiario</th>
+                <th>Costo Ajustado</th>
+                <th>Proveedor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for movimiento in movimientos %}
+            <tr>
+                <td>{{ movimiento.fecha.strftime('%Y-%m-%d') }}</td>
+                <td>{{ movimiento.producto.codigo }}</td>
+                <td>{{ movimiento.producto.descripcion }}</td>
+                <td>{% if movimiento.tipo == 'entrada' %}{{ movimiento.cantidad }}{% else %}0{% endif %}</td>
+                <td>{% if movimiento.tipo == 'salida' %}{{ movimiento.cantidad }}{% else %}0{% endif %}</td>
+                <td>{{ movimiento.producto.stock }}</td>
+                <td>{{ '%.2f'|format(movimiento.producto.costo or 0) }}</td>
+                <td>{{ '%.4f'|format(movimiento.producto.factor_cambiario or 1) }}</td>
+                <td>{{ '%.2f'|format((movimiento.producto.costo or 0) * (movimiento.producto.factor_cambiario or 1)) }}</td>
+                <td>{{ movimiento.proveedor.nombre if movimiento.proveedor else (movimiento.producto.proveedor.nombre if movimiento.producto.proveedor else '') }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% elif view == 'diario' %}
+    <div class="alert alert-info">Seleccione una fecha para ver el inventario diario.</div>
+{% else %}
+    <h2>Inventario Completo</h2>
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Código Producto</th>
+                <th>Descripción</th>
+                <th>Stock</th>
+                <th>Costo</th>
+                <th>Factor Cambiario</th>
+                <th>Costo Ajustado</th>
+                <th>Proveedor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for producto in productos %}
+            <tr>
+                <td>{{ producto.codigo }}</td>
+                <td>{{ producto.descripcion }}</td>
+                <td>{{ producto.stock }}</td>
+                <td>{{ '%.2f'|format(producto.costo or 0) }}</td>
+                <td>{{ '%.4f'|format(producto.factor_cambiario or 1) }}</td>
+                <td>{{ '%.2f'|format((producto.costo or 0) * (producto.factor_cambiario or 1)) }}</td>
+                <td>{{ producto.proveedor.nombre if producto.proveedor else '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+{% endblock %}

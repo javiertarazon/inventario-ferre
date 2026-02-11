@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Nueva Orden de Venta - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-cart"></i> Nueva Orden de Venta</h3>
+            </div>
+            <div class="card-body">
+                <form method="post" id="orderForm">
+                    <div class="mb-3">
+                        <label for="customer_id" class="form-label">Cliente *</label>
+                        <select class="form-select" id="customer_id" name="customer_id" required>
+                            <option value="">-- Seleccionar Cliente --</option>
+                            {% for customer in customers %}
+                            <option value="{{ customer.id }}">
+                                {{ customer.name }} {% if customer.tax_id %}({{ customer.tax_id }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">
+                            ¿No encuentra el cliente? 
+                            <a href="{{ url_for('customers.create') }}" target="_blank">Crear nuevo cliente</a>
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Productos *</label>
+                        <div id="orderItems">
+                            <div class="row mb-2 order-item">
+                                <div class="col-md-5">
+                                    <select class="form-select product-select" name="product_id[]" required>
+                                        <option value="">-- Seleccionar Producto --</option>
+                                        {% for product in products %}
+                                        <option value="{{ product.id }}" 
+                                                data-price="{{ product.precio_dolares }}"
+                                                data-stock="{{ product.stock }}">
+                                            {{ product.codigo }} - {{ product.descripcion }} (Stock: {{ product.stock }})
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <input type="number" class="form-control quantity-input" name="quantity[]" 
+                                           placeholder="Cantidad" min="1" required>
+                                </div>
+                                <div class="col-md-3">
+                                    <input type="number" class="form-control price-input" name="unit_price[]" 
+                                           placeholder="Precio Unit." min="0" step="0.01" required>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-danger btn-sm remove-item" style="display: none;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="addItem">
+                            <i class="bi bi-plus-circle"></i> Agregar Producto
+                        </button>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <strong>Total Estimado:</strong> $<span id="totalAmount">0.00</span>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('sales_orders.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Crear Orden
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const orderItemsContainer = document.getElementById('orderItems');
+    const addItemBtn = document.getElementById('addItem');
+    const totalAmountSpan = document.getElementById('totalAmount');
+    
+    // Add new item row
+    addItemBtn.addEventListener('click', function() {
+        const firstItem = document.querySelector('.order-item');
+        const newItem = firstItem.cloneNode(true);
+        
+        // Clear values
+        newItem.querySelector('.product-select').value = '';
+        newItem.querySelector('.quantity-input').value = '';
+        newItem.querySelector('.price-input').value = '';
+        
+        // Show remove button
+        newItem.querySelector('.remove-item').style.display = 'inline-block';
+        
+        orderItemsContainer.appendChild(newItem);
+        updateRemoveButtons();
+    });
+    
+    // Remove item row
+    orderItemsContainer.addEventListener('click', function(e) {
+        if (e.target.closest('.remove-item')) {
+            e.target.closest('.order-item').remove();
+            updateRemoveButtons();
+            calculateTotal();
+        }
+    });
+    
+    // Update price when product is selected
+    orderItemsContainer.addEventListener('change', function(e) {
+        if (e.target.classList.contains('product-select')) {
+            const option = e.target.options[e.target.selectedIndex];
+            const price = option.dataset.price || 0;
+            const row = e.target.closest('.order-item');
+            row.querySelector('.price-input').value = parseFloat(price).toFixed(2);
+            calculateTotal();
+        }
+    });
+    
+    // Calculate total on quantity or price change
+    orderItemsContainer.addEventListener('input', function(e) {
+        if (e.target.classList.contains('quantity-input') || e.target.classList.contains('price-input')) {
+            calculateTotal();
+        }
+    });
+    
+    function updateRemoveButtons() {
+        const items = document.querySelectorAll('.order-item');
+        items.forEach((item, index) => {
+            const removeBtn = item.querySelector('.remove-item');
+            if (items.length > 1) {
+                removeBtn.style.display = 'inline-block';
+            } else {
+                removeBtn.style.display = 'none';
+            }
+        });
+    }
+    
+    function calculateTotal() {
+        let total = 0;
+        document.querySelectorAll('.order-item').forEach(item => {
+            const quantity = parseFloat(item.querySelector('.quantity-input').value) || 0;
+            const price = parseFloat(item.querySelector('.price-input').value) || 0;
+            total += quantity * price;
+        });
+        totalAmountSpan.textContent = total.toFixed(2);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Productos - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-box"></i> Productos</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('products.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Producto
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('products.index') }}" class="row g-3">
+            <div class="col-md-10">
+                <input type="text" name="q" class="form-control" placeholder="Buscar por código o descripción..." value="{{ query or '' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if productos %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Stock</th>
+                        <th>Precio (USD)</th>
+                        <th>Factor Ajuste</th>
+                        <th>Proveedor</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr>
+                        <td><strong>{{ producto.codigo }}</strong></td>
+                        <td>{{ producto.descripcion }}</td>
+                        <td>
+                            {% if producto.item_group %}
+                            <span class="badge" style="background-color: {{ producto.item_group.color or '#6c757d' }}">
+                                {% if producto.item_group.icon %}<i class="bi bi-{{ producto.item_group.icon }}"></i>{% endif %}
+                                {{ producto.item_group.name }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if producto.reorder_point and producto.stock <= producto.reorder_point %}
+                            <span class="badge bg-danger" title="Bajo stock - Punto de reorden: {{ producto.reorder_point }}">
+                                <i class="bi bi-exclamation-triangle"></i> {{ producto.stock }}
+                            </span>
+                            {% elif producto.stock < 10 %}
+                            <span class="badge bg-danger">{{ producto.stock }}</span>
+                            {% elif producto.stock < 50 %}
+                            <span class="badge bg-warning">{{ producto.stock }}</span>
+                            {% else %}
+                            <span class="badge bg-success">{{ producto.stock }}</span>
+                            {% endif %}
+                        </td>
+                        <td>${{ '%.2f'|format(producto.precio_dolares or 0) }}</td>
+                        <td>{{ '%.2f'|format(producto.factor_ajuste or 1.0) }}</td>
+                        <td>{{ producto.proveedor.nombre if producto.proveedor else '-' }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('products.view', product_id=producto.id) }}" class="btn btn-info" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('products.edit', product_id=producto.id) }}" class="btn btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button type="button" class="btn btn-danger" title="Eliminar" 
+                                        onclick="if(confirm('¿Está seguro de eliminar este producto?')) { document.getElementById('delete-form-{{ producto.id }}').submit(); }">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                            <form id="delete-form-{{ producto.id }}" method="post" action="{{ url_for('products.delete', product_id=producto.id) }}" style="display: none;">
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if pagination and pagination.pages > 1 %}
+<nav aria-label="Paginación de productos" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, q=query) }}">Anterior</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('products.index', page=page_num, q=query) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, q=query) }}">Siguiente</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No se encontraron productos.
+    {% if query %}
+    <a href="{{ url_for('products.index') }}" class="alert-link">Ver todos los productos</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <a href="{{ url_for('products.low_stock') }}" class="btn btn-outline-warning">
+        <i class="bi bi-exclamation-triangle"></i> Ver productos con bajo stock
+    </a>
+</div>
+{% endblock %}

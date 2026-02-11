@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Configuración</title>
+</head>
+<body>
+    {% extends "base.html" %}
+    {% block content %}
+    <h2>Configuración de Tasa Cambiaria y Factor de Ajuste</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-3">
+            {{ form.tasa_cambiaria.label(class="form-label") }}
+            {{ form.tasa_cambiaria(class="form-control") }}
+        </div>
+        <div class="mb-3">
+            {{ form.factor_ajuste.label(class="form-label") }}
+            {{ form.factor_ajuste(class="form-control") }}
+        </div>
+        {{ form.submit(class="btn btn-primary") }}
+    </form>
+    {% endblock %}
+</body>
+</html>

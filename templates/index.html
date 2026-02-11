@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Productos en Inventario</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Stock</th>
+            <th>Costo</th>
+            <th>Factor Cambiario</th>
+            <th>Costo Ajustado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td>{{ producto.codigo }}</td>
+            <td>{{ producto.descripcion }}</td>
+            <td>{{ producto.stock }}</td>
+            <td>{{ '%.2f'|format(producto.costo or 0) }}</td>
+            <td>{{ '%.4f'|format(producto.factor_cambiario or 1) }}</td>
+            <td>{{ '%.2f'|format((producto.costo or 0) * (producto.factor_cambiario or 1)) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if group else 'Nueva' }} Categoría - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-tags"></i> {{ 'Editar Categoría' if group else 'Nueva Categoría' }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="name" name="name" required
+                               value="{{ group.name if group else (form_data.name if form_data else '') }}"
+                               maxlength="100">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ group.description if group else (form_data.description if form_data else '') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="parent_id" class="form-label">Categoría Padre</label>
+                        <select class="form-select" id="parent_id" name="parent_id">
+                            <option value="">-- Sin Categoría Padre (Raíz) --</option>
+                            {% for g in all_groups %}
+                            <option value="{{ g.id }}" 
+                                    {% if group and group.parent_id == g.id %}selected{% endif %}
+                                    {% if form_data and form_data.parent_id|int == g.id %}selected{% endif %}>
+                                {{ g.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Opcional: Seleccione una categoría padre para crear una subcategoría</small>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="color" class="form-label">Color</label>
+                                <input type="color" class="form-control form-control-color" id="color" name="color"
+                                       value="{{ group.color if group else (form_data.color if form_data else '#0d6efd') }}">
+                                <small class="form-text text-muted">Color para identificar la categoría</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="icon" class="form-label">Icono (Bootstrap Icons)</label>
+                                <input type="text" class="form-control" id="icon" name="icon"
+                                       value="{{ group.icon if group else (form_data.icon if form_data else '') }}"
+                                       placeholder="Ej: box, tools, hammer">
+                                <small class="form-text text-muted">
+                                    Ver iconos en <a href="https://icons.getbootstrap.com/" target="_blank">Bootstrap Icons</a>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('item_groups.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {{ 'Actualizar' if group else 'Crear' }} Categoría
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

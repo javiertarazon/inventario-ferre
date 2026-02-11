@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Buscar Productos</h1>
+<form method="post">
+    <div class="mb-3">
+        <label>Rubro (opcional, 1 letra)</label>
+        <input type="text" name="rubro" class="form-control" maxlength="1" value="{{ rubro if rubro else '' }}">
+    </div>
+    <div class="mb-3">
+        <label>Buscar por</label>
+        <select name="criterio" class="form-control">
+            <option value="descripcion" {% if criterio == 'descripcion' %}selected{% endif %}>Descripción (por primeras letras)</option>
+            <option value="codigo" {% if criterio == 'codigo' %}selected{% endif %}>Código</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Texto de búsqueda</label>
+        <input type="text" name="query" class="form-control" value="{{ query if query else '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary">Buscar</button>
+</form>
+{% if productos %}
+<h2>Resultados</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td>{{ producto.codigo }}</td>
+            <td>{{ producto.descripcion }}</td>
+            <td>{{ producto.stock }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}
+{% endblock %}

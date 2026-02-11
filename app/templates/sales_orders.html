@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}Órdenes de Venta - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-cart"></i> Órdenes de Venta</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('sales_orders.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Orden
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('sales_orders.index') }}" class="row g-3">
+            <div class="col-md-10">
+                <select name="status" class="form-select">
+                    <option value="">-- Todos los Estados --</option>
+                    <option value="draft" {% if status_filter == 'draft' %}selected{% endif %}>Borrador</option>
+                    <option value="confirmed" {% if status_filter == 'confirmed' %}selected{% endif %}>Confirmada</option>
+                    <option value="shipped" {% if status_filter == 'shipped' %}selected{% endif %}>Enviada</option>
+                    <option value="delivered" {% if status_filter == 'delivered' %}selected{% endif %}>Entregada</option>
+                    <option value="cancelled" {% if status_filter == 'cancelled' %}selected{% endif %}>Cancelada</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-filter"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if orders %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Número</th>
+                        <th>Cliente</th>
+                        <th>Fecha</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr>
+                        <td><strong>{{ order.order_number }}</strong></td>
+                        <td>{{ order.customer.name }}</td>
+                        <td>{{ order.order_date.strftime('%d/%m/%Y') }}</td>
+                        <td>${{ '%.2f'|format(order.total_amount or 0) }}</td>
+                        <td>
+                            {% if order.status == 'draft' %}
+                            <span class="badge bg-secondary">Borrador</span>
+                            {% elif order.status == 'confirmed' %}
+                            <span class="badge bg-primary">Confirmada</span>
+                            {% elif order.status == 'shipped' %}
+                            <span class="badge bg-info">Enviada</span>
+                            {% elif order.status == 'delivered' %}
+                            <span class="badge bg-success">Entregada</span>
+                            {% elif order.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('sales_orders.view', order_id=order.id) }}" class="btn btn-info" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if pagination and pagination.pages > 1 %}
+<nav aria-label="Paginación de órdenes" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('sales_orders.index', page=pagination.prev_num, status=status_filter) }}">Anterior</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('sales_orders.index', page=page_num, status=status_filter) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('sales_orders.index', page=pagination.next_num, status=status_filter) }}">Siguiente</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No se encontraron órdenes.
+    {% if status_filter %}
+    <a href="{{ url_for('sales_orders.index') }}" class="alert-link">Ver todas las órdenes</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

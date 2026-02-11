@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col">
+        <h1>Sistema de Inventario</h1>
+        <p class="lead">Bienvenido, {{ current_user.username }}!</p>
+    </div>
+</div>
+
+<div class="row mb-3">
+    <div class="col">
+        <h2>Productos en Inventario</h2>
+        {% if productos %}
+        <p class="text-muted">Mostrando los primeros 20 productos</p>
+        {% endif %}
+    </div>
+</div>
+
+{% if productos %}
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Stock</th>
+            <th>Precio (USD)</th>
+            <th>Factor Ajuste</th>
+            <th>Precio Ajustado</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for producto in productos %}
+        <tr>
+            <td>{{ producto.codigo }}</td>
+            <td>{{ producto.descripcion }}</td>
+            <td>{{ producto.stock }}</td>
+            <td>${{ '%.2f'|format(producto.precio_dolares or 0) }}</td>
+            <td>{{ '%.2f'|format(producto.factor_ajuste or 1) }}</td>
+            <td>${{ '%.2f'|format((producto.precio_dolares or 0) * (producto.factor_ajuste or 1)) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<div class="alert alert-info">
+    <h4>No hay productos en el inventario</h4>
+    <p>El sistema está listo para comenzar a agregar productos.</p>
+</div>
+{% endif %}
+
+<div class="row mt-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Sistema Refactorizado</h5>
+                <p class="card-text">
+                    Este sistema ha sido completamente refactorizado con las siguientes mejoras:
+                </p>
+                <ul>
+                    <li>✅ Application Factory Pattern</li>
+                    <li>✅ Configuración multi-ambiente</li>
+                    <li>✅ Sistema de logging estructurado</li>
+                    <li>✅ Modelos mejorados con auditoría</li>
+                    <li>✅ Capa de repositorios</li>
+                    <li>✅ ValidationService completo</li>
+                    <li>✅ Schemas de Marshmallow</li>
+                    <li>✅ Autenticación con bcrypt</li>
+                    <li>✅ Account locking mechanism</li>
+                </ul>
+                <a href="{{ url_for('main.logout') }}" class="btn btn-secondary">Cerrar Sesión</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

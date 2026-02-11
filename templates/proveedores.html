@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Proveedores</h1>
+<form method="post">
+    <div class="mb-3">
+        <label>Nombre</label>
+        <input type="text" name="nombre" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>RIF</label>
+        <input type="text" name="rif" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Rubro del material</label>
+        <input type="text" name="rubro_material" class="form-control" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Crear Proveedor</button>
+</form>
+<h2>Lista de Proveedores</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>RIF</th>
+            <th>Rubro</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for proveedor in proveedores %}
+        <tr>
+            <td>{{ proveedor.nombre }}</td>
+            <td>{{ proveedor.rif }}</td>
+            <td>{{ proveedor.rubro_material }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

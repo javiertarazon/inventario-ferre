@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if customer else 'Nuevo' }} Cliente - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-10 offset-md-1">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-people"></i> {{ 'Editar Cliente' if customer else 'Nuevo Cliente' }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Nombre *</label>
+                                <input type="text" class="form-control" id="name" name="name" required
+                                       value="{{ customer.name if customer else (form_data.name if form_data else '') }}"
+                                       maxlength="200">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="tax_id" class="form-label">RIF/CI</label>
+                                <input type="text" class="form-control" id="tax_id" name="tax_id"
+                                       value="{{ customer.tax_id if customer else (form_data.tax_id if form_data else '') }}"
+                                       maxlength="50">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ customer.email if customer else (form_data.email if form_data else '') }}"
+                                       maxlength="100">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="phone" name="phone"
+                                       value="{{ customer.phone if customer else (form_data.phone if form_data else '') }}"
+                                       maxlength="50">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="billing_address" class="form-label">Dirección de Facturación</label>
+                        <textarea class="form-control" id="billing_address" name="billing_address" rows="2">{{ customer.billing_address if customer else (form_data.billing_address if form_data else '') }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="shipping_address" class="form-label">Dirección de Envío</label>
+                        <textarea class="form-control" id="shipping_address" name="shipping_address" rows="2">{{ customer.shipping_address if customer else (form_data.shipping_address if form_data else '') }}</textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="credit_limit" class="form-label">Límite de Crédito (USD)</label>
+                                <input type="number" class="form-control" id="credit_limit" name="credit_limit" 
+                                       min="0" step="0.01"
+                                       value="{{ '%.2f'|format(customer.credit_limit) if customer else (form_data.credit_limit if form_data else '0.00') }}">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="payment_terms" class="form-label">Términos de Pago</label>
+                                <input type="text" class="form-control" id="payment_terms" name="payment_terms"
+                                       value="{{ customer.payment_terms if customer else (form_data.payment_terms if form_data else '') }}"
+                                       placeholder="Ej: 30 días, Contado, etc."
+                                       maxlength="100">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3">{{ customer.notes if customer else (form_data.notes if form_data else '') }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('customers.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {{ 'Actualizar' if customer else 'Crear' }} Cliente
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

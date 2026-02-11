@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Nuevo Movimiento - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-arrow-left-right"></i> Registrar Movimiento</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="tipo" class="form-label">Tipo de Movimiento *</label>
+                        <select class="form-select" id="tipo" name="tipo" required>
+                            <option value="">-- Seleccionar Tipo --</option>
+                            <option value="ENTRADA" {% if form_data and form_data.tipo == 'ENTRADA' %}selected{% endif %}>
+                                Entrada (Agregar Stock)
+                            </option>
+                            <option value="SALIDA" {% if form_data and form_data.tipo == 'SALIDA' %}selected{% endif %}>
+                                Salida (Reducir Stock)
+                            </option>
+                            <option value="AJUSTE" {% if form_data and form_data.tipo == 'AJUSTE' %}selected{% endif %}>
+                                Ajuste (Establecer Stock)
+                            </option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="producto_id" class="form-label">Producto *</label>
+                        <select class="form-select" id="producto_id" name="producto_id" required>
+                            <option value="">-- Seleccionar Producto --</option>
+                            {% for producto in productos %}
+                            <option value="{{ producto.id }}" 
+                                    data-stock="{{ producto.stock }}"
+                                    {% if form_data and form_data.producto_id|int == producto.id %}selected{% endif %}>
+                                {{ producto.codigo }} - {{ producto.descripcion }} (Stock: {{ producto.stock }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted" id="stock-info"></small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="cantidad" class="form-label">Cantidad *</label>
+                        <input type="number" class="form-control" id="cantidad" name="cantidad" required min="1"
+                               value="{{ form_data.cantidad if form_data else '' }}">
+                        <small class="form-text text-muted">
+                            Para ENTRADA y SALIDA: cantidad a agregar/quitar. Para AJUSTE: nuevo stock total.
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="fecha" class="form-label">Fecha *</label>
+                        <input type="date" class="form-control" id="fecha" name="fecha" required
+                               value="{{ form_data.fecha if form_data else '' }}"
+                               max="{{ today }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descripcion" class="form-label">Descripción</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3" maxlength="500">{{ form_data.descripcion if form_data else '' }}</textarea>
+                        <small class="form-text text-muted">Opcional: motivo del movimiento</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('movements.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Registrar Movimiento
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Show current stock when product is selected
+    document.getElementById('producto_id').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const stock = selectedOption.getAttribute('data-stock');
+        const stockInfo = document.getElementById('stock-info');
+        if (stock !== null) {
+            stockInfo.textContent = `Stock actual: ${stock} unidades`;
+        } else {
+            stockInfo.textContent = '';
+        }
+    });
+    
+    // Set today's date as default
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('fecha').value = today;
+    document.getElementById('fecha').max = today;
+</script>
+{% endblock %}

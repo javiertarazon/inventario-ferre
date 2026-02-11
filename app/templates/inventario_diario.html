@@ -1,0 +1,164 @@
+{% extends 'base.html' %}
+
+{% block title %}Libro de Inventario Art 177 - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-file-earmark-spreadsheet"></i> Libro de Inventario Art 177</h1>
+        <p class="text-muted">Relación de movimiento de entradas y salidas de los inventarios</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('main.export_inventory_report', start_date=start_date.strftime('%Y-%m-%d'), end_date=end_date.strftime('%Y-%m-%d')) }}" 
+           class="btn btn-success">
+            <i class="bi bi-download"></i> Exportar a Excel
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('main.inventory_report') }}" class="row g-3">
+            <div class="col-md-5">
+                <label for="start_date" class="form-label">Fecha Desde</label>
+                <input type="date" class="form-control" id="start_date" name="start_date" 
+                       value="{{ start_date.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="col-md-5">
+                <label for="end_date" class="form-label">Fecha Hasta</label>
+                <input type="date" class="form-control" id="end_date" name="end_date" 
+                       value="{{ end_date.strftime('%Y-%m-%d') }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">EMPRESA: INVERSIONES FERRE-EXITO, C.A</h5>
+        <small>R.I.F. J31764195-7</small><br>
+        <small>DIRECCION: Calle Bolívar. Palo Negro, Municipio Libertador. Estado Aragua</small><br>
+        <small>TELEFONO: 0412-7434522</small><br>
+        <small class="mt-2 d-block">Período: {{ start_date.strftime('%d/%m/%Y') }} - {{ end_date.strftime('%d/%m/%Y') }}</small>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered table-hover mb-0" style="font-size: 0.85rem;">
+                <thead class="table-light">
+                    <tr>
+                        <th rowspan="2" class="align-middle">Código</th>
+                        <th rowspan="2" class="align-middle">Descripción</th>
+                        <th rowspan="2" class="align-middle">Unidad</th>
+                        <th colspan="3" class="text-center bg-info bg-opacity-10">Existencia Inicial</th>
+                        <th colspan="3" class="text-center bg-success bg-opacity-10">Entradas</th>
+                        <th colspan="3" class="text-center bg-danger bg-opacity-10">Salidas</th>
+                        <th colspan="3" class="text-center bg-warning bg-opacity-10">Autoconsumos</th>
+                        <th colspan="3" class="text-center bg-secondary bg-opacity-10">Retiro</th>
+                        <th colspan="3" class="text-center bg-primary bg-opacity-10">Inv. Final</th>
+                    </tr>
+                    <tr>
+                        <!-- Existencia Inicial -->
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Costo Unit.</th>
+                        <th class="text-end">Monto</th>
+                        <!-- Entradas -->
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Costo Unit.</th>
+                        <th class="text-end">Monto</th>
+                        <!-- Salidas -->
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Costo Unit.</th>
+                        <th class="text-end">Monto</th>
+                        <!-- Autoconsumos -->
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Costo Unit.</th>
+                        <th class="text-end">Monto</th>
+                        <!-- Retiro -->
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Costo Unit.</th>
+                        <th class="text-end">Monto</th>
+                        <!-- Inv. Final -->
+                        <th class="text-end">Cantidad</th>
+                        <th class="text-end">Costo Unit.</th>
+                        <th class="text-end">Monto</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in report_data %}
+                    <tr>
+                        <td><strong>{{ row['Código'] }}</strong></td>
+                        <td>{{ row['Descripción'] }}</td>
+                        <td class="text-center">{{ row['Unidad de Medida'] }}</td>
+                        
+                        <!-- Existencia Inicial -->
+                        <td class="text-end">{{ row['Existencia Inicial - Cantidad'] }}</td>
+                        <td class="text-end">${{ '%.2f'|format(row['Existencia Inicial - Costo Unitario']) }}</td>
+                        <td class="text-end">${{ '%.2f'|format(row['Existencia Inicial - Monto']) }}</td>
+                        
+                        <!-- Entradas -->
+                        <td class="text-end {% if row['Entradas - Cantidad'] > 0 %}text-success fw-bold{% endif %}">
+                            {{ row['Entradas - Cantidad'] }}
+                        </td>
+                        <td class="text-end">${{ '%.2f'|format(row['Entradas - Costo Unitario']) }}</td>
+                        <td class="text-end {% if row['Entradas - Monto'] > 0 %}text-success{% endif %}">
+                            ${{ '%.2f'|format(row['Entradas - Monto']) }}
+                        </td>
+                        
+                        <!-- Salidas -->
+                        <td class="text-end {% if row['Salidas - Cantidad'] > 0 %}text-danger fw-bold{% endif %}">
+                            {{ row['Salidas - Cantidad'] }}
+                        </td>
+                        <td class="text-end">${{ '%.2f'|format(row['Salidas - Costo Unitario']) }}</td>
+                        <td class="text-end {% if row['Salidas - Monto'] > 0 %}text-danger{% endif %}">
+                            ${{ '%.2f'|format(row['Salidas - Monto']) }}
+                        </td>
+                        
+                        <!-- Autoconsumos -->
+                        <td class="text-end text-muted">{{ row['Autoconsumos - Cantidad'] }}</td>
+                        <td class="text-end text-muted">${{ '%.2f'|format(row['Autoconsumos - Costo Unitario']) }}</td>
+                        <td class="text-end text-muted">${{ '%.2f'|format(row['Autoconsumos - Monto']) }}</td>
+                        
+                        <!-- Retiro -->
+                        <td class="text-end text-muted">{{ row['Retiro - Cantidad'] }}</td>
+                        <td class="text-end text-muted">${{ '%.2f'|format(row['Retiro - Costo Unitario']) }}</td>
+                        <td class="text-end text-muted">${{ '%.2f'|format(row['Retiro - Monto']) }}</td>
+                        
+                        <!-- Inv. Final -->
+                        <td class="text-end fw-bold">{{ row['Inv.final - Cantidad'] }}</td>
+                        <td class="text-end">${{ '%.2f'|format(row['Inv.final - Costo Unitario']) }}</td>
+                        <td class="text-end fw-bold">${{ '%.2f'|format(row['Inv.final - Monto']) }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot class="table-secondary">
+                    <tr>
+                        <th colspan="5" class="text-end">TOTALES:</th>
+                        <th class="text-end">${{ '%.2f'|format(totals.initial_amount) }}</th>
+                        <th colspan="2"></th>
+                        <th class="text-end text-success">${{ '%.2f'|format(totals.entries_amount) }}</th>
+                        <th colspan="2"></th>
+                        <th class="text-end text-danger">${{ '%.2f'|format(totals.exits_amount) }}</th>
+                        <th colspan="8"></th>
+                        <th class="text-end fw-bold">${{ '%.2f'|format(totals.final_amount) }}</th>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="alert alert-info">
+            <strong><i class="bi bi-info-circle"></i> Información:</strong>
+            Este reporte cumple con el Reglamento de la ley de I.S.L.R artículo 177 para el control de inventarios.
+        </div>
+    </div>
+</div>
+{% endblock %}

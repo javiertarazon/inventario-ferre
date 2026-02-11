@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ customer.name }} - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-person"></i> {{ customer.name }}</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('customers.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <a href="{{ url_for('customers.edit', customer_id=customer.id) }}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Información del Cliente</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>RIF/CI:</strong> {{ customer.tax_id or '-' }}</p>
+                <p><strong>Email:</strong> {{ customer.email or '-' }}</p>
+                <p><strong>Teléfono:</strong> {{ customer.phone or '-' }}</p>
+                <p><strong>Límite de Crédito:</strong> ${{ '%.2f'|format(customer.credit_limit or 0) }}</p>
+                <p><strong>Términos de Pago:</strong> {{ customer.payment_terms or '-' }}</p>
+                <p><strong>Estado:</strong> 
+                    <span class="badge {% if customer.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ 'Activo' if customer.is_active else 'Inactivo' }}
+                    </span>
+                </p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Direcciones</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Dirección de Facturación:</strong><br>
+                {{ customer.billing_address or '-' }}</p>
+                <p><strong>Dirección de Envío:</strong><br>
+                {{ customer.shipping_address or '-' }}</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5>Órdenes de Venta</h5>
+            </div>
+            <div class="card-body">
+                {% if orders and orders.items %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Fecha</th>
+                                <th>Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders.items %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('sales_orders.view', order_id=order.id) }}">
+                                        {{ order.order_number }}
+                                    </a>
+                                </td>
+                                <td>{{ order.order_date.strftime('%d/%m/%Y') }}</td>
+                                <td>${{ '%.2f'|format(order.total_amount or 0) }}</td>
+                                <td>
+                                    {% if order.status == 'draft' %}
+                                    <span class="badge bg-secondary">Borrador</span>
+                                    {% elif order.status == 'confirmed' %}
+                                    <span class="badge bg-primary">Confirmada</span>
+                                    {% elif order.status == 'delivered' %}
+                                    <span class="badge bg-success">Entregada</span>
+                                    {% elif order.status == 'cancelled' %}
+                                    <span class="badge bg-danger">Cancelada</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> No hay órdenes para este cliente.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if customer.notes %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5>Notas</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">{{ customer.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

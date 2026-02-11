@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Movimientos - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-arrow-left-right"></i> Movimientos de Inventario</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('movements.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nuevo Movimiento
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('movements.index') }}" class="row g-3">
+            <div class="col-md-10">
+                <label for="fecha" class="form-label">Fecha</label>
+                <input type="date" class="form-control" id="fecha" name="fecha" 
+                       value="{{ fecha.isoformat() if fecha else '' }}">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+        <div class="mt-2">
+            <a href="{{ url_for('movements.today') }}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-calendar-day"></i> Hoy
+            </a>
+        </div>
+    </div>
+</div>
+
+{% if movimientos %}
+<div class="card">
+    <div class="card-header">
+        <h5>Movimientos del {{ fecha.strftime('%d/%m/%Y') if fecha else 'día seleccionado' }}</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Producto</th>
+                        <th>Cantidad</th>
+                        <th>Descripción</th>
+                        <th>Usuario</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for movimiento in movimientos %}
+                    <tr>
+                        <td>{{ movimiento.fecha.strftime('%d/%m/%Y') if movimiento.fecha else '-' }}</td>
+                        <td>
+                            {% if movimiento.tipo == 'ENTRADA' %}
+                                <span class="badge bg-success">ENTRADA</span>
+                            {% elif movimiento.tipo == 'SALIDA' %}
+                                <span class="badge bg-danger">SALIDA</span>
+                            {% elif movimiento.tipo == 'AJUSTE' %}
+                                <span class="badge bg-warning">AJUSTE</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ movimiento.tipo }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <strong>{{ movimiento.producto.codigo if movimiento.producto else '-' }}</strong><br>
+                            <small>{{ movimiento.producto.descripcion if movimiento.producto else '-' }}</small>
+                        </td>
+                        <td><strong>{{ movimiento.cantidad }}</strong></td>
+                        <td>{{ movimiento.descripcion or '-' }}</td>
+                        <td>{{ movimiento.creator.username if movimiento.creator else '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('movements.view', movement_id=movimiento.id) }}" class="btn btn-sm btn-info" title="Ver">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if pagination and pagination.pages > 1 %}
+<nav aria-label="Paginación de movimientos" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('movements.index', page=pagination.prev_num, fecha=fecha.isoformat() if fecha else '') }}">Anterior</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('movements.index', page=page_num, fecha=fecha.isoformat() if fecha else '') }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('movements.index', page=pagination.next_num, fecha=fecha.isoformat() if fecha else '') }}">Siguiente</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No hay movimientos para la fecha seleccionada.
+</div>
+{% endif %}
+{% endblock %}

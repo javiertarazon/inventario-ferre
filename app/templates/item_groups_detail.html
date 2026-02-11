@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ group.name }} - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>
+            {% if group.icon %}<i class="bi bi-{{ group.icon }}"></i>{% endif %}
+            <span {% if group.color %}style="color: {{ group.color }}"{% endif %}>{{ group.name }}</span>
+        </h1>
+        {% if group.description %}
+        <p class="text-muted">{{ group.description }}</p>
+        {% endif %}
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('item_groups.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+        <a href="{{ url_for('item_groups.edit', group_id=group.id) }}" class="btn btn-warning">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>Productos en esta Categoría ({{ products.total if products else 0 }})</h5>
+    </div>
+    <div class="card-body">
+        {% if products and products.items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Stock</th>
+                        <th>Precio (USD)</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for product in products.items %}
+                    <tr>
+                        <td><strong>{{ product.codigo }}</strong></td>
+                        <td>{{ product.descripcion }}</td>
+                        <td>
+                            <span class="badge {% if product.stock < 10 %}bg-danger{% elif product.stock < 50 %}bg-warning{% else %}bg-success{% endif %}">
+                                {{ product.stock }}
+                            </span>
+                        </td>
+                        <td>${{ '%.2f'|format(product.precio_dolares or 0) }}</td>
+                        <td>
+                            <a href="{{ url_for('products.view', product_id=product.id) }}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay productos en esta categoría.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

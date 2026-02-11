@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Movimientos</h1>
+<div class="mb-3">
+    <label>Fecha</label>
+    <form method="get" class="d-flex gap-2">
+        <input type="date" name="fecha" class="form-control" value="{{ fecha.strftime('%Y-%m-%d') if fecha else '' }}">
+        <button type="submit" class="btn btn-outline-primary">Ver día</button>
+    </form>
+</div>
+
+{% if cierre %}
+    <div class="alert alert-success">
+        Día cerrado: {{ cierre.fecha.strftime('%Y-%m-%d') }} ({{ cierre.cerrado_en.strftime('%H:%M') }})
+    </div>
+    <a class="btn btn-success mb-3" href="{{ url_for('exportar_dia', fecha=fecha.strftime('%Y-%m-%d')) }}">Exportar día cerrado</a>
+{% else %}
+    <form method="post" action="{{ url_for('cerrar_dia') }}" class="mb-3">
+        <input type="hidden" name="fecha" value="{{ fecha.strftime('%Y-%m-%d') if fecha else '' }}">
+        <button type="submit" class="btn btn-danger">Cerrar día</button>
+    </form>
+    <a class="btn btn-outline-success mb-3" href="{{ url_for('exportar_dia', fecha=fecha.strftime('%Y-%m-%d')) }}">Exportar día</a>
+{% endif %}
+<form method="post">
+    <div class="mb-3">
+        <label>Tipo</label>
+        <select name="tipo" class="form-control" required>
+            <option value="entrada">Entrada</option>
+            <option value="salida">Salida</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Producto</label>
+        <select name="producto_id" class="form-control" required>
+            {% for producto in productos %}
+            <option value="{{ producto.id }}">{{ producto.descripcion }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label>Cantidad</label>
+        <input type="number" name="cantidad" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label>Proveedor (opcional para entradas)</label>
+        <select name="proveedor_id" class="form-control">
+            <option value="">Ninguno</option>
+            {% for proveedor in proveedores %}
+            <option value="{{ proveedor.id }}">{{ proveedor.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Registrar Movimiento</button>
+</form>
+<h2>Historial de Movimientos</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Producto</th>
+            <th>Tipo</th>
+            <th>Cantidad</th>
+            <th>Proveedor</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for movimiento in movimientos %}
+        <tr>
+            <td>{{ movimiento.fecha.strftime('%Y-%m-%d %H:%M') }}</td>
+            <td>{{ movimiento.producto.descripcion }}</td>
+            <td>{{ movimiento.tipo }}</td>
+            <td>{{ movimiento.cantidad }}</td>
+            <td>{{ movimiento.proveedor.nombre if movimiento.proveedor else '' }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2>Historial por día (cerrados)</h2>
+{% if cierres %}
+<ul class="list-group">
+    {% for c in cierres %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ c.fecha.strftime('%Y-%m-%d') }}
+        <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('movimientos', fecha=c.fecha.strftime('%Y-%m-%d')) }}">Ver</a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p>No hay días cerrados.</p>
+{% endif %}
+{% endblock %}

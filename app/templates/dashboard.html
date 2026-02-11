@@ -1,0 +1,272 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1><i class="bi bi-speedometer2"></i> Dashboard</h1>
+        <p class="text-muted">Resumen general del sistema</p>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="row mb-4">
+    <!-- Inventory Metrics -->
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Total Productos</h6>
+                        <h2 class="mb-0">{{ metrics.inventory.total_products }}</h2>
+                        <small class="text-muted">{{ metrics.inventory.categories }} categorías</small>
+                    </div>
+                    <div class="text-primary">
+                        <i class="bi bi-box-seam" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Valor Inventario</h6>
+                        <h2 class="mb-0">${{ '%.2f'|format(metrics.inventory.total_value) }}</h2>
+                        <small class="text-muted">USD</small>
+                    </div>
+                    <div class="text-success">
+                        <i class="bi bi-cash-stack" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Stock Bajo</h6>
+                        <h2 class="mb-0">{{ metrics.inventory.low_stock_count }}</h2>
+                        <small class="text-muted">{{ metrics.inventory.out_of_stock }} agotados</small>
+                    </div>
+                    <div class="text-warning">
+                        <i class="bi bi-exclamation-triangle" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card border-info">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h6 class="text-muted mb-2">Órdenes Totales</h6>
+                        <h2 class="mb-0">{{ metrics.sales.total_orders }}</h2>
+                        <small class="text-muted">{{ metrics.sales.confirmed_orders }} confirmadas</small>
+                    </div>
+                    <div class="text-info">
+                        <i class="bi bi-cart-check" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sales and Alerts Row -->
+<div class="row mb-4">
+    <!-- Sales Chart -->
+    <div class="col-md-8 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-graph-up"></i> Ventas Últimos 30 Días</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Alerts -->
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-bell"></i> Alertas ({{ metrics.alerts.count }})</h5>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if metrics.alerts.items %}
+                    {% for alert in metrics.alerts.items %}
+                    <div class="alert alert-{{ alert.type }} alert-dismissible fade show mb-2" role="alert">
+                        <i class="{{ alert.icon }}"></i>
+                        <strong>{{ alert.title }}:</strong> {{ alert.message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No hay alertas</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Products and Recent Activity -->
+<div class="row mb-4">
+    <!-- Top Products -->
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-star"></i> Productos Más Vendidos</h5>
+            </div>
+            <div class="card-body">
+                {% if top_products %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Producto</th>
+                                <th class="text-end">Cantidad</th>
+                                <th class="text-end">Ventas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for product in top_products %}
+                            <tr>
+                                <td><strong>{{ product.codigo }}</strong></td>
+                                <td>{{ product.descripcion }}</td>
+                                <td class="text-end">{{ product.quantity }}</td>
+                                <td class="text-end">${{ '%.2f'|format(product.sales) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center">No hay datos de ventas</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="col-md-6 mb-3">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-clock-history"></i> Actividad Reciente</h5>
+            </div>
+            <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                {% if metrics.recent_activity %}
+                    {% for activity in metrics.recent_activity %}
+                    <div class="d-flex mb-3">
+                        <div class="flex-shrink-0">
+                            <i class="{{ activity.icon }} text-primary" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">{{ activity.title }}</h6>
+                            <p class="mb-0 text-muted small">{{ activity.description }}</p>
+                            <small class="text-muted">
+                                {{ activity.timestamp.strftime('%d/%m/%Y %H:%M') }} - {{ activity.user }}
+                            </small>
+                        </div>
+                    </div>
+                    {% if not loop.last %}<hr>{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="text-muted text-center">No hay actividad reciente</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-lightning"></i> Acciones Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('products.create') }}" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-plus-circle"></i> Nuevo Producto
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('movements.create') }}" class="btn btn-outline-success w-100">
+                            <i class="bi bi-arrow-left-right"></i> Registrar Movimiento
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('products.low_stock') }}" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-exclamation-triangle"></i> Ver Stock Bajo
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{{ url_for('suppliers.create') }}" class="btn btn-outline-info w-100">
+                            <i class="bi bi-truck"></i> Nuevo Proveedor
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // Sales Chart
+    const ctx = document.getElementById('salesChart');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ sales_chart.labels | tojson }},
+            datasets: [{
+                label: 'Ventas (USD)',
+                data: {{ sales_chart.values | tojson }},
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

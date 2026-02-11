@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ 'Editar' if proveedor else 'Nuevo' }} Proveedor - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-truck"></i> {{ 'Editar Proveedor' if proveedor else 'Nuevo Proveedor' }}</h3>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="nombre" class="form-label">Nombre *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required
+                               value="{{ proveedor.nombre if proveedor else (form_data.nombre if form_data else '') }}"
+                               maxlength="200">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="rif" class="form-label">RIF *</label>
+                        <input type="text" class="form-control" id="rif" name="rif" required
+                               value="{{ proveedor.rif if proveedor else (form_data.rif if form_data else '') }}"
+                               placeholder="Ej: J-12345678-9">
+                        <small class="form-text text-muted">Formato: J-12345678-9 o V-12345678-9</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="rubro_material" class="form-label">Rubro Material</label>
+                        <input type="text" class="form-control" id="rubro_material" name="rubro_material"
+                               value="{{ proveedor.rubro_material if proveedor else (form_data.rubro_material if form_data else '') }}"
+                               maxlength="100">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="telefono" class="form-label">Teléfono</label>
+                                <input type="text" class="form-control" id="telefono" name="telefono"
+                                       value="{{ proveedor.telefono if proveedor else (form_data.telefono if form_data else '') }}"
+                                       maxlength="20">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email"
+                                       value="{{ proveedor.email if proveedor else (form_data.email if form_data else '') }}"
+                                       maxlength="255">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="direccion" class="form-label">Dirección</label>
+                        <textarea class="form-control" id="direccion" name="direccion" rows="3" maxlength="500">{{ proveedor.direccion if proveedor else (form_data.direccion if form_data else '') }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('suppliers.index') }}" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> {{ 'Actualizar' if proveedor else 'Crear' }} Proveedor
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
