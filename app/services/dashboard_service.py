@@ -37,42 +37,80 @@ class DashboardService:
             
         except Exception as e:
             current_app.logger.error(f"Error getting dashboard metrics: {str(e)}")
-            return {}
+            # Return empty structure to avoid template errors
+            return {
+                'inventory': {
+                    'total_products': 0,
+                    'total_value': 0,
+                    'low_stock_count': 0,
+                    'out_of_stock': 0,
+                    'categories': 0
+                },
+                'sales': {
+                    'total_orders': 0,
+                    'draft_orders': 0,
+                    'confirmed_orders': 0,
+                    'delivered_orders': 0,
+                    'total_sales': 0,
+                    'month_sales': 0,
+                    'pending_payment': 0
+                },
+                'customers': {
+                    'total_customers': 0,
+                    'active_customers': 0,
+                    'new_customers': 0
+                },
+                'alerts': {
+                    'count': 0,
+                    'items': []
+                },
+                'recent_activity': []
+            }
     
     def _get_inventory_metrics(self) -> Dict[str, Any]:
         """Get inventory-related metrics."""
-        # Total products
-        total_products = Product.query.filter_by(deleted_at=None).count()
-        
-        # Total stock value
-        products = Product.query.filter_by(deleted_at=None).all()
-        total_value = sum(
-            float(p.stock * p.precio_dolares) for p in products
-        )
-        
-        # Low stock products
-        low_stock_count = Product.query.filter(
-            Product.deleted_at == None,
-            Product.stock <= Product.reorder_point
-        ).count()
-        
-        # Out of stock products
-        out_of_stock = Product.query.filter_by(
-            stock=0,
-            deleted_at=None
-        ).count()
-        
-        # Products by category
-        from app.models import ItemGroup
-        categories = ItemGroup.query.filter_by(deleted_at=None).count()
-        
-        return {
-            'total_products': total_products,
-            'total_value': round(total_value, 2),
-            'low_stock_count': low_stock_count,
-            'out_of_stock': out_of_stock,
-            'categories': categories
-        }
+        try:
+            # Total products
+            total_products = Product.query.filter_by(deleted_at=None).count()
+            
+            # Total stock value
+            products = Product.query.filter_by(deleted_at=None).all()
+            total_value = sum(
+                float(p.stock * p.precio_dolares) for p in products
+            )
+            
+            # Low stock products
+            low_stock_count = Product.query.filter(
+                Product.deleted_at == None,
+                Product.stock <= Product.reorder_point
+            ).count()
+            
+            # Out of stock products
+            out_of_stock = Product.query.filter_by(
+                stock=0,
+                deleted_at=None
+            ).count()
+            
+            # Products by category
+            from app.models import ItemGroup
+            categories = ItemGroup.query.filter_by(deleted_at=None).count()
+            
+            return {
+                'total_products': total_products,
+                'total_value': round(total_value, 2),
+                'low_stock_count': low_stock_count,
+                'out_of_stock': out_of_stock,
+                'categories': categories
+            }
+        except Exception as e:
+            current_app.logger.error(f"Error getting inventory metrics: {str(e)}")
+            return {
+                'total_products': 0,
+                'total_value': 0,
+                'low_stock_count': 0,
+                'out_of_stock': 0,
+                'categories': 0
+            }
     
     def _get_sales_metrics(self) -> Dict[str, Any]:
         """Get sales-related metrics."""
