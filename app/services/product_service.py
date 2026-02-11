@@ -18,8 +18,8 @@ class ProductService:
     
     def __init__(self):
         """Initialize product service with dependencies."""
-        self.product_repo = ProductRepository(Product)
-        self.supplier_repo = SupplierRepository(Supplier)
+        self.product_repo = ProductRepository()
+        self.supplier_repo = SupplierRepository()
         self.validation_service = ValidationService()
     
     def create_product(self, data: Dict[str, Any], user_id: int) -> Product:

@@ -20,7 +20,7 @@ class SalesOrderService:
     def __init__(self):
         """Initialize sales order service with dependencies."""
         self.sales_order_repo = SalesOrderRepository()
-        self.product_repo = ProductRepository(Product)
+        self.product_repo = ProductRepository()
         self.customer_repo = CustomerRepository()
         self.validation_service = ValidationService()
     

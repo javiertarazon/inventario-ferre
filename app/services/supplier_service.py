@@ -18,7 +18,7 @@ class SupplierService:
     
     def __init__(self):
         """Initialize supplier service with dependencies."""
-        self.supplier_repo = SupplierRepository(Supplier)
+        self.supplier_repo = SupplierRepository()
         self.validation_service = ValidationService()
     
     def create_supplier(self, data: Dict[str, Any], user_id: int) -> Supplier:
@@ -245,7 +245,7 @@ class SupplierService:
             List of all active suppliers
         """
         try:
-            return self.supplier_repo.get_active_suppliers(page=None, per_page=None)
+            return self.supplier_repo.get_all()
         except Exception as e:
             current_app.logger.error(f"Error getting all suppliers: {str(e)}")
             raise BusinessLogicError(f"Error al obtener proveedores: {str(e)}")

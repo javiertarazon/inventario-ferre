@@ -18,8 +18,8 @@ class MovementService:
     
     def __init__(self):
         """Initialize movement service with dependencies."""
-        self.movement_repo = MovementRepository(Movement)
-        self.product_repo = ProductRepository(Product)
+        self.movement_repo = MovementRepository()
+        self.product_repo = ProductRepository()
         self.validation_service = ValidationService()
     
     def create_movement(self, data: Dict[str, Any], user_id: int) -> Movement:
