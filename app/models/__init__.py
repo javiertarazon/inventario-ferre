@@ -11,6 +11,7 @@ from app.models.backup_metadata import BackupMetadata
 from app.models.item_group import ItemGroup
 from app.models.customer import Customer
 from app.models.sales_order import SalesOrder, SalesOrderItem
+from app.models.exchange_rate import ExchangeRate
 
 # Aliases for English names
 Supplier = Proveedor
@@ -29,5 +30,6 @@ __all__ = [
     'Customer',
     'SalesOrder',
     'SalesOrderItem',
+    'ExchangeRate',
 ]
 

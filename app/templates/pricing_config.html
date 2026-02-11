@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración de Precios - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1><i class="bi bi-currency-exchange"></i> Configuración de Precios</h1>
+        <p class="text-muted">Gestión de tasa de cambio y factores de ajuste</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Tasa de Cambio -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5><i class="bi bi-cash-coin"></i> Tasa de Cambio del Día</h5>
+            </div>
+            <div class="card-body">
+                {% if current_rate %}
+                <div class="alert alert-info">
+                    <h3 class="mb-0">
+                        <i class="bi bi-currency-dollar"></i> 1 USD = 
+                        <strong>{{ '%.2f'|format(current_rate.rate|float) }} Bs</strong>
+                    </h3>
+                    <small class="text-muted">Última actualización: {{ current_rate.created_at.strftime('%Y-%m-%d %H:%M') if current_rate.created_at else '-' }}</small>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i> No hay tasa de cambio configurada para hoy
+                </div>
+                {% endif %}
+                
+                <form method="post" action="{{ url_for('pricing.update_rate') }}" class="mt-3">
+                    <div class="mb-3">
+                        <label for="rate" class="form-label">Nueva Tasa de Cambio (Bs/$):</label>
+                        <input type="number" step="0.01" min="0.01" name="rate" id="rate" 
+                               class="form-control" value="{{ current_rate.rate|float if current_rate else '' }}" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-save"></i> Actualizar Tasa
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Factor de Ajuste -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5><i class="bi bi-percent"></i> Aplicar Factor de Ajuste</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('pricing.apply_factor') }}" id="factorForm">
+                    <div class="mb-3">
+                        <label for="factor" class="form-label">Factor de Ajuste:</label>
+                        <input type="number" step="0.01" min="0.01" name="factor" id="factor" 
+                               class="form-control" value="1.00" required>
+                        <small class="text-muted">Ejemplo: 1.30 = 30% de ganancia</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Aplicar a:</label>
+                        <select name="apply_to" id="apply_to" class="form-select" required>
+                            <option value="">Seleccione...</option>
+                            <option value="all">Todos los productos</option>
+                            <option value="category">Una categoría específica</option>
+                            <option value="product">Un producto específico</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="categorySelect" style="display: none;">
+                        <label for="category_id" class="form-label">Categoría:</label>
+                        <select name="target_id" id="category_id" class="form-select">
+                            <option value="">Seleccione categoría...</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3" id="productSearch" style="display: none;">
+                        <label for="product_search" class="form-label">Buscar Producto:</label>
+                        <input type="text" id="product_search" class="form-control" placeholder="Buscar por código o descripción...">
+                        <input type="hidden" name="target_id" id="product_id">
+                        <div id="productResults" class="list-group mt-2" style="max-height: 200px; overflow-y: auto;"></div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Aplicar Factor
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Buscador de Productos con Precios Calculados -->
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <h5><i class="bi bi-search"></i> Buscar Productos y Ver Precios Calculados</h5>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <input type="text" id="searchQuery" class="form-control" placeholder="Buscar por código o descripción...">
+            </div>
+            <div class="col-md-4">
+                <select id="searchCategory" class="form-select">
+                    <option value="">Todas las categorías</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="button" id="searchBtn" class="btn btn-info w-100">
+                    <i class="bi bi-search"></i> Buscar
+                </button>
+            </div>
+        </div>
+        
+        <div id="searchResults"></div>
+    </div>
+</div>
+
+<!-- Historial de Tasas -->
+<div class="card">
+    <div class="card-header">
+        <h5><i class="bi bi-clock-history"></i> Historial de Tasas de Cambio</h5>
+    </div>
+    <div class="card-body">
+        {% if recent_rates %}
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tasa (Bs/$)</th>
+                        <th>Registrado por</th>
+                        <th>Hora</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rate in recent_rates %}
+                    <tr>
+                        <td>{{ rate.date.strftime('%Y-%m-%d') if rate.date else '-' }}</td>
+                        <td><strong>{{ '%.2f'|format(rate.rate|float) }}</strong></td>
+                        <td>{{ rate.creator.username if rate.creator else '-' }}</td>
+                        <td>{{ rate.created_at.strftime('%H:%M') if rate.created_at else '-' }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i> No hay historial de tasas registradas
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+// Manejo del formulario de factor de ajuste
+document.getElementById('apply_to').addEventListener('change', function() {
+    const categorySelect = document.getElementById('categorySelect');
+    const productSearch = document.getElementById('productSearch');
+    
+    categorySelect.style.display = 'none';
+    productSearch.style.display = 'none';
+    
+    if (this.value === 'category') {
+        categorySelect.style.display = 'block';
+    } else if (this.value === 'product') {
+        productSearch.style.display = 'block';
+    }
+});
+
+// Búsqueda de productos para aplicar factor
+let searchTimeout;
+document.getElementById('product_search').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    
+    if (query.length < 2) {
+        document.getElementById('productResults').innerHTML = '';
+        return;
+    }
+    
+    searchTimeout = setTimeout(() => {
+        fetch(`/pricing/search-products?q=${encodeURIComponent(query)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.products.length > 0) {
+                    let html = '';
+                    data.products.forEach(product => {
+                        html += `<a href="#" class="list-group-item list-group-item-action" data-id="${product.id}" data-codigo="${product.codigo}">
+                            <strong>${product.codigo}</strong> - ${product.descripcion}
+                        </a>`;
+                    });
+                    document.getElementById('productResults').innerHTML = html;
+                    
+                    // Add click handlers
+                    document.querySelectorAll('#productResults a').forEach(item => {
+                        item.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            document.getElementById('product_id').value = this.dataset.id;
+                            document.getElementById('product_search').value = this.dataset.codigo;
+                            document.getElementById('productResults').innerHTML = '';
+                        });
+                    });
+                } else {
+                    document.getElementById('productResults').innerHTML = '<div class="alert alert-warning">No se encontraron productos</div>';
+                }
+            });
+    }, 300);
+});
+
+// Búsqueda de productos con precios calculados
+document.getElementById('searchBtn').addEventListener('click', searchProducts);
+document.getElementById('searchQuery').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchProducts();
+    }
+});
+
+function searchProducts() {
+    const query = document.getElementById('searchQuery').value.trim();
+    const category = document.getElementById('searchCategory').value;
+    
+    let url = '/pricing/search-products?';
+    if (query) url += `q=${encodeURIComponent(query)}&`;
+    if (category) url += `category_id=${category}`;
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayResults(data);
+            } else {
+                document.getElementById('searchResults').innerHTML = `<div class="alert alert-danger">${data.error}</div>`;
+            }
+        })
+        .catch(error => {
+            document.getElementById('searchResults').innerHTML = `<div class="alert alert-danger">Error: ${error}</div>`;
+        });
+}
+
+function displayResults(data) {
+    if (data.products.length === 0) {
+        document.getElementById('searchResults').innerHTML = '<div class="alert alert-info">No se encontraron productos</div>';
+        return;
+    }
+    
+    let html = `
+        <div class="alert alert-success">
+            <strong>Tasa actual: ${data.rate.toFixed(2)} Bs/$</strong> | 
+            Productos encontrados: ${data.count}
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Precio USD</th>
+                        <th>Precio Bs</th>
+                        <th>Factor</th>
+                        <th>Precio Final Bs</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
+    
+    data.products.forEach(product => {
+        html += `
+            <tr>
+                <td><strong>${product.codigo}</strong></td>
+                <td>${product.descripcion}</td>
+                <td><span class="badge bg-secondary">${product.categoria}</span></td>
+                <td>$${product.precio_dolares.toFixed(2)}</td>
+                <td>${product.precio_bs.toFixed(2)} Bs</td>
+                <td>${product.factor_ajuste.toFixed(2)}</td>
+                <td><strong>${product.precio_final_bs.toFixed(2)} Bs</strong></td>
+            </tr>
+        `;
+    });
+    
+    html += '</tbody></table></div>';
+    document.getElementById('searchResults').innerHTML = html;
+}
+</script>
+{% endblock %}

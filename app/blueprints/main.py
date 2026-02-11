@@ -143,10 +143,10 @@ def inventory_report():
         
         # Calculate totals
         totals = {
-            'initial_amount': df['Existencia Inicial - Monto'].sum(),
-            'entries_amount': df['Entradas - Monto'].sum(),
-            'exits_amount': df['Salidas - Monto'].sum(),
-            'final_amount': df['Inv.final - Monto'].sum()
+            'initial_amount': df['Existencia Inicial - Monto (Bs)'].sum(),
+            'entries_amount': df['Entradas - Monto (Bs)'].sum(),
+            'exits_amount': df['Salidas - Monto (Bs)'].sum(),
+            'final_amount': df['Inv.final - Monto (Bs)'].sum()
         }
         
         return render_template('inventario_diario.html',

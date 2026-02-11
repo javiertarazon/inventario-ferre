@@ -148,7 +148,7 @@ def register_blueprints(app):
     # Import blueprints
     from app.blueprints import (
         main_bp, products_bp, suppliers_bp, movements_bp,
-        item_groups_bp, customers_bp, sales_orders_bp
+        item_groups_bp, customers_bp, sales_orders_bp, pricing_bp
     )
     
     # Register blueprints
@@ -159,6 +159,7 @@ def register_blueprints(app):
     app.register_blueprint(item_groups_bp, url_prefix='/categories')
     app.register_blueprint(customers_bp, url_prefix='/customers')
     app.register_blueprint(sales_orders_bp, url_prefix='/orders')
+    app.register_blueprint(pricing_bp, url_prefix='/pricing')
     
     # Import other blueprints (to be created in subsequent tasks)
     # from app.blueprints.reports import reports_bp

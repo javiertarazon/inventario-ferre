@@ -39,17 +39,23 @@ def index():
         item_group_service = ItemGroupService()
         categories = item_group_service.get_all_groups()
         
+        # Get current exchange rate
+        from app.models import ExchangeRate
+        current_rate = ExchangeRate.get_current_rate()
+        exchange_rate = float(current_rate.rate) if current_rate else 36.50
+        
         return render_template('productos.html',
                              productos=result.items,
                              pagination=result,
                              query=query,
                              search_by=search_by,
                              item_group_id=item_group_id,
-                             categories=categories)
+                             categories=categories,
+                             exchange_rate=exchange_rate)
     
     except Exception as e:
         flash(f'Error al cargar productos: {str(e)}', 'error')
-        return render_template('productos.html', productos=[], pagination=None)
+        return render_template('productos.html', productos=[], pagination=None, exchange_rate=36.50)
 
 
 @products_bp.route('/create', methods=['GET', 'POST'])

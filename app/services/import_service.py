@@ -177,7 +177,7 @@ class ImportService:
     
     def export_inventory_report(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
         """
-        Generate inventory report in Art 177 format.
+        Generate inventory report in Art 177 format with prices in Bolivares.
         
         Args:
             start_date: Start date for report
@@ -186,7 +186,11 @@ class ImportService:
         Returns:
             Pandas dataframe with formatted report
         """
-        from app.models import Movement
+        from app.models import Movement, ExchangeRate
+        
+        # Get current exchange rate
+        current_rate = ExchangeRate.get_current_rate()
+        exchange_rate = float(current_rate.rate) if current_rate else 36.50
         
         # Get all products
         products = Product.query.filter_by(deleted_at=None).order_by(Product.codigo).all()
@@ -220,35 +224,38 @@ class ImportService:
             entries_qty = sum(m.cantidad for m in movements if m.tipo == 'entrada')
             exits_qty = sum(m.cantidad for m in movements if m.tipo == 'salida')
             
-            # Calculate amounts
-            initial_amount = initial_stock * float(product.precio_dolares)
-            entries_amount = entries_qty * float(product.precio_dolares)
-            exits_amount = exits_qty * float(product.precio_dolares)
+            # Calculate price in Bolivares with adjustment factor
+            precio_bs = float(product.precio_dolares) * exchange_rate * float(product.factor_ajuste)
+            
+            # Calculate amounts in Bolivares
+            initial_amount = initial_stock * precio_bs
+            entries_amount = entries_qty * precio_bs
+            exits_amount = exits_qty * precio_bs
             final_stock = initial_stock + entries_qty - exits_qty
-            final_amount = final_stock * float(product.precio_dolares)
+            final_amount = final_stock * precio_bs
             
             report_data.append({
                 'Código': product.codigo,
                 'Descripción': product.descripcion,
                 'Unidad de Medida': 'UND',
                 'Existencia Inicial - Cantidad': initial_stock,
-                'Existencia Inicial - Costo Unitario': float(product.precio_dolares),
-                'Existencia Inicial - Monto': initial_amount,
+                'Existencia Inicial - Costo Unitario (Bs)': round(precio_bs, 2),
+                'Existencia Inicial - Monto (Bs)': round(initial_amount, 2),
                 'Entradas - Cantidad': entries_qty,
-                'Entradas - Costo Unitario': float(product.precio_dolares),
-                'Entradas - Monto': entries_amount,
+                'Entradas - Costo Unitario (Bs)': round(precio_bs, 2),
+                'Entradas - Monto (Bs)': round(entries_amount, 2),
                 'Salidas - Cantidad': exits_qty,
-                'Salidas - Costo Unitario': float(product.precio_dolares),
-                'Salidas - Monto': exits_amount,
+                'Salidas - Costo Unitario (Bs)': round(precio_bs, 2),
+                'Salidas - Monto (Bs)': round(exits_amount, 2),
                 'Autoconsumos - Cantidad': 0,
-                'Autoconsumos - Costo Unitario': 0,
-                'Autoconsumos - Monto': 0,
+                'Autoconsumos - Costo Unitario (Bs)': 0,
+                'Autoconsumos - Monto (Bs)': 0,
                 'Retiro - Cantidad': 0,
-                'Retiro - Costo Unitario': 0,
-                'Retiro - Monto': 0,
+                'Retiro - Costo Unitario (Bs)': 0,
+                'Retiro - Monto (Bs)': 0,
                 'Inv.final - Cantidad': final_stock,
-                'Inv.final - Costo Unitario': float(product.precio_dolares),
-                'Inv.final - Monto': final_amount
+                'Inv.final - Costo Unitario (Bs)': round(precio_bs, 2),
+                'Inv.final - Monto (Bs)': round(final_amount, 2)
             })
         
         return pd.DataFrame(report_data)
