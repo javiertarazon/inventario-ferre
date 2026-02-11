@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+
+{% block title %}Productos con Bajo Stock - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-exclamation-triangle text-warning"></i> Productos con Bajo Stock</h1>
+        <p class="text-muted">Productos que requieren reabastecimiento</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('products.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Productos
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" action="{{ url_for('products.low_stock') }}" class="row g-3">
+            <div class="col-md-10">
+                <label for="threshold" class="form-label">Umbral de stock bajo:</label>
+                <input type="number" name="threshold" id="threshold" class="form-control" 
+                       value="{{ threshold or 10 }}" min="1" max="100">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if productos %}
+<div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i> 
+    <strong>{{ pagination.total if pagination else productos|length }}</strong> productos con stock por debajo de <strong>{{ threshold or 10 }}</strong> unidades
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Descripción</th>
+                        <th>Categoría</th>
+                        <th>Stock Actual</th>
+                        <th>Punto de Reorden</th>
+                        <th>Cantidad a Pedir</th>
+                        <th>Proveedor</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for producto in productos %}
+                    <tr {% if producto.reorder_point and producto.stock <= producto.reorder_point %}class="table-danger"{% endif %}>
+                        <td><strong>{{ producto.codigo }}</strong></td>
+                        <td>{{ producto.descripcion }}</td>
+                        <td>
+                            {% if producto.item_group %}
+                            <span class="badge" style="background-color: {{ producto.item_group.color or '#6c757d' }}">
+                                {% if producto.item_group.icon %}<i class="bi bi-{{ producto.item_group.icon }}"></i>{% endif %}
+                                {{ producto.item_group.name }}
+                            </span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-danger fs-6">
+                                <i class="bi bi-exclamation-triangle"></i> {{ producto.stock }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if producto.reorder_point %}
+                            <span class="badge bg-info">{{ producto.reorder_point }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if producto.reorder_quantity %}
+                            <span class="badge bg-success">{{ producto.reorder_quantity }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ producto.proveedor.nombre if producto.proveedor else '-' }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <a href="{{ url_for('products.view', product_id=producto.id) }}" class="btn btn-info" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{{ url_for('products.edit', product_id=producto.id) }}" class="btn btn-warning" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{{ url_for('movements.create') }}?producto_id={{ producto.id }}&tipo=ENTRADA" class="btn btn-success" title="Registrar Entrada">
+                                    <i class="bi bi-plus-circle"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if pagination and pagination.pages > 1 %}
+<nav aria-label="Paginación de productos" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('products.low_stock', page=pagination.prev_num, threshold=threshold) }}">Anterior</a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('products.low_stock', page=page_num, threshold=threshold) }}">{{ page_num }}</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+        
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('products.low_stock', page=pagination.next_num, threshold=threshold) }}">Siguiente</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="alert alert-success">
+    <i class="bi bi-check-circle"></i> 
+    No hay productos con stock por debajo de <strong>{{ threshold or 10 }}</strong> unidades. ¡Excelente!
+</div>
+{% endif %}
+
+<div class="mt-4">
+    <div class="card">
+        <div class="card-header">
+            <h5><i class="bi bi-info-circle"></i> Información</h5>
+        </div>
+        <div class="card-body">
+            <p><strong>Punto de Reorden:</strong> Nivel de stock en el que se debe realizar un nuevo pedido.</p>
+            <p><strong>Cantidad a Pedir:</strong> Cantidad sugerida para el pedido de reabastecimiento.</p>
+            <p class="mb-0"><strong>Productos resaltados en rojo:</strong> Han alcanzado o están por debajo del punto de reorden.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
