@@ -261,7 +261,8 @@ class DashboardService:
                 'icon': 'bi-arrow-left-right',
                 'title': f'Movimiento: {movement.tipo}',
                 'description': f'{movement.producto.descripcion} - Cantidad: {movement.cantidad}',
-                'timestamp': movement.created_at,
+                'timestamp': movement.created_at.isoformat() if movement.created_at else None,
+                'timestamp_obj': movement.created_at,  # For sorting
                 'user': movement.creator.username if movement.creator else 'Sistema'
             })
         
@@ -276,12 +277,17 @@ class DashboardService:
                 'icon': 'bi-cart',
                 'title': f'Orden: {order.order_number}',
                 'description': f'Cliente: {order.customer.name} - Total: ${order.total_amount}',
-                'timestamp': order.created_at,
+                'timestamp': order.created_at.isoformat() if order.created_at else None,
+                'timestamp_obj': order.created_at,  # For sorting
                 'user': order.creator.username if order.creator else 'Sistema'
             })
         
-        # Sort by timestamp
-        activities.sort(key=lambda x: x['timestamp'], reverse=True)
+        # Sort by timestamp_obj
+        activities.sort(key=lambda x: x['timestamp_obj'] if x['timestamp_obj'] else datetime.min, reverse=True)
+        
+        # Remove timestamp_obj before returning (not JSON serializable)
+        for activity in activities:
+            activity.pop('timestamp_obj', None)
         
         return activities[:10]  # Return last 10 activities
     
