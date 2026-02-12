@@ -124,6 +124,47 @@ class ValidationService:
             except (ValueError, TypeError):
                 errors.append("El ID del proveedor debe ser un número entero válido")
         
+        # Validate item_group_id (category)
+        item_group_id = data.get('item_group_id')
+        if item_group_id is not None:
+            if item_group_id == '':  # Empty string should be treated as None
+                validated_data['item_group_id'] = None
+            else:
+                try:
+                    validated_data['item_group_id'] = int(item_group_id)
+                except (ValueError, TypeError):
+                    errors.append("El ID de la categoría debe ser un número entero válido")
+        
+        # Validate reorder_point
+        reorder_point = data.get('reorder_point')
+        if reorder_point is not None:
+            if reorder_point == '':
+                validated_data['reorder_point'] = None
+            else:
+                try:
+                    reorder_value = int(reorder_point)
+                    if reorder_value < 0:
+                        errors.append("El punto de reorden no puede ser negativo")
+                    else:
+                        validated_data['reorder_point'] = reorder_value
+                except (ValueError, TypeError):
+                    errors.append("El punto de reorden debe ser un número entero válido")
+        
+        # Validate reorder_quantity
+        reorder_quantity = data.get('reorder_quantity')
+        if reorder_quantity is not None:
+            if reorder_quantity == '':
+                validated_data['reorder_quantity'] = None
+            else:
+                try:
+                    quantity_value = int(reorder_quantity)
+                    if quantity_value < 0:
+                        errors.append("La cantidad de reorden no puede ser negativa")
+                    else:
+                        validated_data['reorder_quantity'] = quantity_value
+                except (ValueError, TypeError):
+                    errors.append("La cantidad de reorden debe ser un número entero válido")
+        
         if errors:
             raise ValidationError("; ".join(errors))
         
