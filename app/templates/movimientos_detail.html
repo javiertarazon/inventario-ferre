@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle de Movimiento - Sistema de Inventario{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-arrow-left-right"></i> Detalle de Movimiento</h1>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('movements.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Listado
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Información del Movimiento</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>ID:</strong> {{ movimiento.id }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Tipo:</strong>
+                        {% if movimiento.tipo == 'ENTRADA' %}
+                        <span class="badge bg-success">
+                            <i class="bi bi-arrow-down-circle"></i> ENTRADA
+                        </span>
+                        {% elif movimiento.tipo == 'SALIDA' %}
+                        <span class="badge bg-danger">
+                            <i class="bi bi-arrow-up-circle"></i> SALIDA
+                        </span>
+                        {% else %}
+                        <span class="badge bg-warning">
+                            <i class="bi bi-arrow-repeat"></i> AJUSTE
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Fecha:</strong> {{ movimiento.fecha.strftime('%d/%m/%Y') if movimiento.fecha else '-' }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Cantidad:</strong> 
+                        <span class="badge bg-primary">{{ movimiento.cantidad }}</span>
+                    </div>
+                </div>
+
+                <hr>
+
+                <h6 class="mb-3">Producto</h6>
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <strong>Código:</strong> {{ movimiento.producto.codigo }}<br>
+                        <strong>Descripción:</strong> {{ movimiento.producto.descripcion }}<br>
+                        <strong>Stock Actual:</strong> 
+                        {% if movimiento.producto.stock < 10 %}
+                        <span class="badge bg-danger">{{ movimiento.producto.stock }}</span>
+                        {% elif movimiento.producto.stock < 50 %}
+                        <span class="badge bg-warning">{{ movimiento.producto.stock }}</span>
+                        {% else %}
+                        <span class="badge bg-success">{{ movimiento.producto.stock }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if movimiento.descripcion %}
+                <hr>
+                <h6 class="mb-3">Descripción/Motivo</h6>
+                <p>{{ movimiento.descripcion }}</p>
+                {% endif %}
+
+                <hr>
+
+                <h6 class="mb-3">Información de Auditoría</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Creado:</strong><br>
+                            {{ movimiento.created_at.strftime('%d/%m/%Y %H:%M') if movimiento.created_at else '-' }}<br>
+                            {% if movimiento.creator %}
+                            Por: {{ movimiento.creator.username }}
+                            {% endif %}
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <strong>Última actualización:</strong><br>
+                            {{ movimiento.updated_at.strftime('%d/%m/%Y %H:%M') if movimiento.updated_at else '-' }}<br>
+                            {% if movimiento.updater %}
+                            Por: {{ movimiento.updater.username }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Acciones</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('products.view', product_id=movimiento.producto_id) }}" class="btn btn-info">
+                        <i class="bi bi-box"></i> Ver Producto
+                    </a>
+                    <a href="{{ url_for('movements.index') }}" class="btn btn-secondary">
+                        <i class="bi bi-list"></i> Ver Todos los Movimientos
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">Resumen del Producto</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Código:</strong> {{ movimiento.producto.codigo }}</p>
+                <p><strong>Stock:</strong> {{ movimiento.producto.stock }}</p>
+                <p><strong>Precio USD:</strong> ${{ '%.2f'|format(movimiento.producto.precio_dolares|float) }}</p>
+                {% if movimiento.producto.proveedor %}
+                <p><strong>Proveedor:</strong> {{ movimiento.producto.proveedor.nombre }}</p>
+                {% endif %}
+                {% if movimiento.producto.item_group %}
+                <p>
+                    <strong>Categoría:</strong>
+                    <span class="badge" style="background-color: {{ movimiento.producto.item_group.color }}">
+                        {% if movimiento.producto.item_group.icon %}
+                        <i class="bi bi-{{ movimiento.producto.item_group.icon }}"></i>
+                        {% endif %}
+                        {{ movimiento.producto.item_group.name }}
+                    </span>
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
