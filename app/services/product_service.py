@@ -130,6 +130,9 @@ class ProductService:
             # Save changes
             updated_product = self.product_repo.update(product)
             
+            # Refresh to load relationships
+            db.session.refresh(updated_product)
+            
             current_app.logger.info(
                 f"Product updated: {updated_product.codigo} by user {user_id}"
             )

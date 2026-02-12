@@ -31,7 +31,12 @@ class ProductRepository(BaseRepository[Product]):
             Paginated result
         """
         try:
+            from sqlalchemy.orm import joinedload
+            
             q = db.session.query(Product).filter(Product.deleted_at.is_(None))
+            
+            # Eager load relationships to avoid N+1 queries
+            q = q.options(joinedload(Product.item_group), joinedload(Product.proveedor))
             
             # Search based on search_by filter
             if query:

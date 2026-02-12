@@ -1,6 +1,7 @@
 """
 Products blueprint - Routes for product management.
 """
+from decimal import Decimal
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
 from werkzeug.exceptions import BadRequest
@@ -43,6 +44,10 @@ def index():
         from app.models import ExchangeRate
         current_rate = ExchangeRate.get_current_rate()
         exchange_rate = float(current_rate.rate) if current_rate else 36.50
+        
+        # Convert to float for Jinja2 template calculations
+        # This ensures compatibility with Decimal types from database
+        exchange_rate = float(exchange_rate)
         
         return render_template('productos.html',
                              productos=result.items,

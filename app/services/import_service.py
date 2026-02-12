@@ -8,9 +8,10 @@ from flask import current_app
 from werkzeug.utils import secure_filename
 import os
 
-from app.models import Product
+from app.models import Product, ItemGroup
 from app.services import ProductService
 from app.utils.exceptions import ValidationError, BusinessLogicError
+from app.utils.code_generator import CodeGenerator
 from app.extensions import db
 
 
@@ -86,7 +87,7 @@ class ImportService:
     
     def _process_dataframe(self, df: pd.DataFrame, user_id: int) -> Dict[str, Any]:
         """
-        Process dataframe and create/update products.
+        Process dataframe and create/update products with automatic code generation.
         
         Args:
             df: Pandas dataframe with product data
@@ -101,27 +102,50 @@ class ImportService:
         
         # Expected columns (flexible matching)
         codigo_col = self._find_column(df, ['codigo', 'code', 'código'])
-        desc_col = self._find_column(df, ['descripcion', 'description', 'descripción', 'producto'])
-        stock_col = self._find_column(df, ['stock', 'cantidad', 'existencia', 'inv.final'])
-        price_col = self._find_column(df, ['precio', 'price', 'precio_dolares', 'costo unitario'])
+        desc_col = self._find_column(df, ['descripcion', 'description', 'descripción', 'producto', 'descripcion del articulo'])
+        stock_col = self._find_column(df, ['stock', 'cantidad', 'existencia', 'inv.final', 'cantidad unid/kg'])
+        price_col = self._find_column(df, ['precio', 'price', 'precio_dolares', 'costo unitario', 'precio venta $'])
+        category_col = self._find_column(df, ['categoria', 'category', 'categoría', 'item_group'])
         
-        if not all([codigo_col, desc_col]):
-            raise ValidationError('El archivo debe contener al menos columnas de Código y Descripción')
+        if not desc_col:
+            raise ValidationError('El archivo debe contener al menos una columna de Descripción')
+        
+        # Get all categories for mapping
+        categories = {cat.name: cat for cat in ItemGroup.query.filter_by(deleted_at=None).all()}
         
         for index, row in df.iterrows():
             try:
                 # Skip empty rows
-                if pd.isna(row[codigo_col]) or str(row[codigo_col]).strip() == '':
+                if pd.isna(row[desc_col]) or str(row[desc_col]).strip() == '':
                     continue
                 
-                codigo = str(row[codigo_col]).strip()
-                descripcion = str(row[desc_col]).strip() if not pd.isna(row[desc_col]) else codigo
+                descripcion = str(row[desc_col]).strip()
+                
+                # Get category
+                item_group = None
+                if category_col and not pd.isna(row[category_col]):
+                    category_name = str(row[category_col]).strip()
+                    item_group = categories.get(category_name)
+                    
+                    if not item_group:
+                        errors.append(f"Fila {index + 2}: Categoría '{category_name}' no encontrada")
+                        continue
+                
+                # Generate code automatically if category is provided
+                if item_group:
+                    codigo = CodeGenerator.generate_code(item_group.name, descripcion)
+                elif codigo_col and not pd.isna(row[codigo_col]):
+                    # Use provided code if no category
+                    codigo = str(row[codigo_col]).strip()
+                else:
+                    # Generate generic code
+                    codigo = f"GEN-{index + 1:04d}"
                 
                 # Get optional fields
                 stock = int(row[stock_col]) if stock_col and not pd.isna(row[stock_col]) else 0
                 precio = float(row[price_col]) if price_col and not pd.isna(row[price_col]) else 0.0
                 
-                # Check if product exists
+                # Check if product exists by code
                 existing_product = Product.query.filter_by(codigo=codigo, deleted_at=None).first()
                 
                 if existing_product:
@@ -129,7 +153,8 @@ class ImportService:
                     data = {
                         'descripcion': descripcion,
                         'stock': stock,
-                        'precio_dolares': precio if precio > 0 else existing_product.precio_dolares
+                        'precio_dolares': precio if precio > 0 else existing_product.precio_dolares,
+                        'item_group_id': item_group.id if item_group else existing_product.item_group_id
                     }
                     self.product_service.update_product(existing_product.id, data, user_id)
                     updated += 1
@@ -140,7 +165,8 @@ class ImportService:
                         'descripcion': descripcion,
                         'stock': stock,
                         'precio_dolares': precio if precio > 0 else 1.0,
-                        'factor_ajuste': 1.0
+                        'factor_ajuste': 1.0,
+                        'item_group_id': item_group.id if item_group else None
                     }
                     self.product_service.create_product(data, user_id)
                     created += 1

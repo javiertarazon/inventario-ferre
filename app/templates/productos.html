@@ -80,8 +80,8 @@
                 </thead>
                 <tbody>
                     {% for producto in productos %}
-                    {% set precio_bs = (producto.precio_dolares or 0) * exchange_rate %}
-                    {% set precio_final_bs = precio_bs * (producto.factor_ajuste or 1.0) %}
+                    {% set precio_bs = (producto.precio_dolares|float or 0) * exchange_rate %}
+                    {% set precio_final_bs = precio_bs * (producto.factor_ajuste|float or 1.0) %}
                     <tr>
                         <td><strong>{{ producto.codigo }}</strong></td>
                         <td>{{ producto.descripcion }}</td>
@@ -108,9 +108,9 @@
                             <span class="badge bg-success">{{ producto.stock }}</span>
                             {% endif %}
                         </td>
-                        <td><small class="text-muted">${{ '%.2f'|format(producto.precio_dolares or 0) }}</small></td>
+                        <td><small class="text-muted">${{ '%.2f'|format(producto.precio_dolares|float or 0) }}</small></td>
                         <td>{{ '%.2f'|format(precio_bs) }} Bs</td>
-                        <td><small>{{ '%.2f'|format(producto.factor_ajuste or 1.0) }}</small></td>
+                        <td><small>{{ '%.2f'|format(producto.factor_ajuste|float or 1.0) }}</small></td>
                         <td><strong>{{ '%.2f'|format(precio_final_bs) }} Bs</strong></td>
                         <td>{{ producto.proveedor.nombre if producto.proveedor else '-' }}</td>
                         <td>
