@@ -103,8 +103,8 @@
                 <h5 class="mb-0"><i class="bi bi-bell"></i> Alertas ({{ metrics.alerts.count }})</h5>
             </div>
             <div class="card-body" style="max-height: 400px; overflow-y: auto;">
-                {% if metrics.alerts.items %}
-                    {% for alert in metrics.alerts.items %}
+                {% if metrics.alerts.list %}
+                    {% for alert in metrics.alerts.list %}
                     <div class="alert alert-{{ alert.type }} alert-dismissible fade show mb-2" role="alert">
                         <i class="{{ alert.icon }}"></i>
                         <strong>{{ alert.title }}:</strong> {{ alert.message }}

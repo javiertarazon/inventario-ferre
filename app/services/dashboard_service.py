@@ -62,7 +62,7 @@ class DashboardService:
                 },
                 'alerts': {
                     'count': 0,
-                    'items': []
+                    'list': []
                 },
                 'recent_activity': []
             }
@@ -243,7 +243,7 @@ class DashboardService:
         
         return {
             'count': len(alerts),
-            'items': alerts[:10]  # Limit to 10 alerts
+            'list': alerts[:10]  # Limit to 10 alerts
         }
     
     def _get_recent_activity(self) -> list:
