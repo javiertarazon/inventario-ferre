@@ -3,6 +3,7 @@ Movement repository.
 """
 from datetime import date
 from typing import List
+from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from app.models.movement import Movimiento
 from app.repositories.base_repository import BaseRepository, PaginatedResult
@@ -21,8 +22,8 @@ class MovementRepository(BaseRepository[Movimiento]):
         """Get movements by date range."""
         try:
             q = db.session.query(Movimiento).filter(
-                Movimiento.fecha >= start_date,
-                Movimiento.fecha <= end_date
+                func.date(Movimiento.fecha) >= start_date,
+                func.date(Movimiento.fecha) <= end_date
             ).order_by(Movimiento.fecha.desc())
             
             total = q.count()

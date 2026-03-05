@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "default": {
+    "profile": "default",
+    "preferIdeProfile": true,
+    "allowApiFallback": true,
+    "apiFallback": {
+      "provider": "openai",
+      "model": "gpt-5-mini",
+      "env": ["OPENAI_API_KEY"]
+    }
+  },
+  "ideProfiles": {
+    "vscode": {
+      "provider": "github-copilot",
+      "model": "copilot-default",
+      "profiles": {
+        "default": {}
+      }
+    }
+  }
+}

@@ -225,19 +225,35 @@ class ProductService:
             return product
         return None
     
-    def search_products(self, query: str = '', filters: Optional[Dict[str, Any]] = None,
-                       page: int = 1, per_page: int = 20):
+    def search_products(
+        self,
+        query: str = '',
+        filters: Optional[Dict[str, Any]] = None,
+        page: int = 1,
+        per_page: int = 20
+    ) -> Dict[str, Any]:
         """
         Search products with pagination.
         
+        Performs full-text search across product names, descriptions,
+        and codes with optional filtering and pagination support.
+        
         Args:
-            query: Search query string
-            filters: Additional filters
-            page: Page number
-            per_page: Items per page
+            query: Search query string (searches product name, description, code)
+            filters: Optional dictionary of additional filters (e.g., category_id, supplier_id)
+            page: Page number for pagination (starting from 1)
+            per_page: Number of items to return per page (default 20)
             
         Returns:
-            PaginatedResult with products
+            Dictionary containing:
+                - items: List of Product objects matching the search
+                - total: Total count of matching products
+                - pages: Total number of pages
+                - current_page: Current page number
+                - per_page: Items per page used
+                
+        Raises:
+            BusinessLogicError: If search operation fails
         """
         try:
             # Validate pagination
@@ -255,17 +271,33 @@ class ProductService:
             current_app.logger.error(f"Error searching products: {str(e)}")
             raise BusinessLogicError(f"Error al buscar productos: {str(e)}")
     
-    def get_low_stock_products(self, threshold: int = 10, page: int = 1, per_page: int = 20):
+    def get_low_stock_products(
+        self,
+        threshold: int = 10,
+        page: int = 1,
+        per_page: int = 20
+    ) -> Dict[str, Any]:
         """
-        Get products with low stock.
+        Get products with stock levels below threshold (inventory alert).
+        
+        Returns paginated list of products where current stock is less than
+        the specified threshold, useful for inventory management and ordering.
         
         Args:
-            threshold: Stock threshold
-            page: Page number
-            per_page: Items per page
+            threshold: Stock level threshold - products below this will be returned (default 10)
+            page: Page number for pagination (starting from 1)
+            per_page: Number of items to return per page (default 20)
             
         Returns:
-            PaginatedResult with low stock products
+            Dictionary containing:
+                - items: List of Product objects with low stock
+                - total: Total count of low stock products
+                - pages: Total number of pages
+                - current_page: Current page number
+                - per_page: Items per page used
+                
+        Raises:
+            BusinessLogicError: If query fails
         """
         try:
             return self.product_repo.get_low_stock_products(
@@ -311,17 +343,33 @@ class ProductService:
         next_num = max_num + 1
         return f"{prefix}-{next_num:02d}"
 
-    def get_products_by_category(self, category_id: int, page: int = 1, per_page: int = 20):
+    def get_products_by_category(
+        self,
+        category_id: int,
+        page: int = 1,
+        per_page: int = 20
+    ) -> Dict[str, Any]:
         """
-        Get all products in a specific category.
+        Get all products in a specific category with pagination.
+        
+        Retrieves all active products that belong to the specified item group/category,
+        excluding soft-deleted products.
         
         Args:
-            category_id: ID of the item group/category
-            page: Page number for pagination
-            per_page: Items per page
+            category_id: ID of the item group/category to filter by
+            page: Page number for pagination (starting from 1)
+            per_page: Number of items to return per page (default 20)
             
         Returns:
-            Paginated list of products
+            Dictionary containing:
+                - items: List of Product objects in the category
+                - total: Total count of products in category
+                - pages: Total number of pages
+                - current_page: Current page number
+                - per_page: Items per page used
+                
+        Raises:
+            DatabaseError: If database query fails
         """
         try:
             return self.product_repo.get_by_category(category_id, page=page, per_page=per_page)
@@ -329,12 +377,18 @@ class ProductService:
             current_app.logger.error(f"Database error getting products by category: {str(e)}")
             raise DatabaseError(f"Error al obtener productos por categoría: {str(e)}")
     
-    def get_all_products(self):
+    def get_all_products(self) -> List[Product]:
         """
         Get all active products without pagination.
         
+        Returns all products that are not soft-deleted. Use with caution
+        on large datasets as no pagination is applied.
+        
         Returns:
-            List of all active products
+            List of all active Product objects
+            
+        Raises:
+            DatabaseError: If database query fails
         """
         try:
             return self.product_repo.get_all_list()

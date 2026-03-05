@@ -183,7 +183,7 @@ class ItemGroupService:
             return group
         return None
     
-    def get_all_groups(self):
+    def get_all_groups(self) -> List[ItemGroup]:
         """
         Get all active item groups without pagination.
         

@@ -21,6 +21,7 @@ def index():
         query = request.args.get('q', '')
         search_by = request.args.get('search_by', 'all')
         item_group_id = request.args.get('item_group_id', type=int)
+        proveedor_id = request.args.get('proveedor_id', type=int)
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         
@@ -30,6 +31,8 @@ def index():
         }
         if item_group_id:
             filters['item_group_id'] = item_group_id
+        if proveedor_id:
+            filters['proveedor_id'] = proveedor_id
         
         # Get products
         product_service = ProductService()
@@ -39,6 +42,10 @@ def index():
         from app.services import ItemGroupService
         item_group_service = ItemGroupService()
         categories = item_group_service.get_all_groups()
+        
+        # Get suppliers for filter dropdown
+        supplier_service = SupplierService()
+        suppliers = supplier_service.get_all_suppliers()
         
         # Get current exchange rate
         from app.models import ExchangeRate
@@ -55,7 +62,9 @@ def index():
                              query=query,
                              search_by=search_by,
                              item_group_id=item_group_id,
+                             proveedor_id=proveedor_id,
                              categories=categories,
+                             suppliers=suppliers,
                              exchange_rate=exchange_rate)
     
     except Exception as e:

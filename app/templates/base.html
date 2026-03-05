@@ -277,8 +277,8 @@
                             <li><a class="dropdown-item" href="{{ url_for('main.import_inventory') }}">
                                 <i class="bi bi-upload"></i> Importar Inventario
                             </a></li>
-                            <li><a class="dropdown-item" href="{{ url_for('main.inventory_report') }}">
-                                <i class="bi bi-file-earmark-spreadsheet"></i> Libro de Inventario
+                            <li><a class="dropdown-item" href="{{ url_for('reports.libro_inventario') }}">
+                                <i class="bi bi-file-earmark-spreadsheet"></i> Libro de Inventario (Art. 177)
                             </a></li>
                         </ul>
                     </li>
@@ -306,6 +306,39 @@
                         <a class="nav-link" href="{{ url_for('pricing.index') }}">
                             <i class="bi bi-currency-exchange"></i> Configuración de Precios
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="reportesDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-bar-chart-line"></i> Reportes
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item fw-semibold" href="{{ url_for('reports.libro_inventario') }}"
+                                   style="color:#79c0ff;">
+                                <i class="bi bi-journal-richtext"></i> Libro de Inventario (Art. 177)
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.libro_diario', modo='hoy') }}">
+                                <i class="bi bi-journal-arrow-down"></i> Libro Diario
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.resumen_mensual') }}">
+                                <i class="bi bi-calendar-month"></i> Resumen Mensual
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.inventario') }}">
+                                <i class="bi bi-box-seam"></i> Inventario Completo
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.stock_bajo') }}">
+                                <i class="bi bi-exclamation-triangle"></i> Stock Bajo
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.ventas') }}">
+                                <i class="bi bi-cart"></i> Ventas por Periodo
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('reports.index') }}"
+                                   style="color:#8b949e;font-size:.9rem;">
+                                <i class="bi bi-grid"></i> Todos los reportes
+                            </a></li>
+                        </ul>
                     </li>
                     {% endif %}
                 </ul>

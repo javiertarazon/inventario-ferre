@@ -6,6 +6,7 @@ from flask_login import login_required, current_user
 from datetime import datetime, date
 
 from app.services import MovementService, ProductService
+from app.models import ItemGroup
 from app.utils.exceptions import ValidationError, NotFoundError, BusinessLogicError, DatabaseError
 
 movements_bp = Blueprint('movements', __name__)
@@ -45,12 +46,21 @@ def index():
 @login_required
 def create():
     """Create new movement."""
-    if request.method == 'GET':
-        # Get products for dropdown - use get_all_products instead of search with high limit
+    def _render_form(form_data=None):
         product_service = ProductService()
         productos = product_service.get_all_products()
-        return render_template('movimientos_form.html', movimiento=None, productos=productos)
-    
+        categorias = ItemGroup.query.order_by(ItemGroup.name).all()
+        return render_template(
+            'movimientos_form.html',
+            movimiento=None,
+            productos=productos,
+            categorias=categorias,
+            form_data=form_data,
+        )
+
+    if request.method == 'GET':
+        return _render_form()
+
     try:
         # Get form data
         data = {
@@ -60,39 +70,33 @@ def create():
             'descripcion': request.form.get('descripcion', '').strip(),
             'fecha': request.form.get('fecha', date.today().isoformat())
         }
-        
+
         # Parse date
         if isinstance(data['fecha'], str):
             data['fecha'] = datetime.strptime(data['fecha'], '%Y-%m-%d').date()
-        
+
         # Remove empty descripcion
         if not data['descripcion']:
             data.pop('descripcion')
-        
+
         # Create movement
         movement_service = MovementService()
-        movement = movement_service.create_movement(data, current_user.id)
-        
-        flash(f'Movimiento registrado exitosamente', 'success')
+        movement_service.create_movement(data, current_user.id)
+
+        flash('Movimiento registrado exitosamente', 'success')
         return redirect(url_for('movements.index'))
-    
+
     except ValidationError as e:
         flash(f'Error de validación: {e.message}', 'error')
-        product_service = ProductService()
-        productos = product_service.get_all_products()
-        return render_template('movimientos_form.html', movimiento=None, productos=productos, form_data=request.form)
-    
+        return _render_form(request.form)
+
     except NotFoundError as e:
         flash(f'Error: {e.message}', 'error')
-        product_service = ProductService()
-        productos = product_service.get_all_products()
-        return render_template('movimientos_form.html', movimiento=None, productos=productos, form_data=request.form)
-    
+        return _render_form(request.form)
+
     except (BusinessLogicError, DatabaseError) as e:
         flash(f'Error: {e.message}', 'error')
-        product_service = ProductService()
-        productos = product_service.get_all_products()
-        return render_template('movimientos_form.html', movimiento=None, productos=productos, form_data=request.form)
+        return _render_form(request.form)
 
 
 @movements_bp.route('/<int:movement_id>')

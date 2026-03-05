@@ -1,7 +1,7 @@
 """
 Supplier Service - Business logic for supplier management.
 """
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
@@ -215,7 +215,7 @@ class SupplierService:
             return supplier
         return None
     
-    def list_suppliers(self, page: int = 1, per_page: int = 20):
+    def list_suppliers(self, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
         """
         List all active suppliers with pagination.
         
@@ -224,7 +224,7 @@ class SupplierService:
             per_page: Items per page
             
         Returns:
-            PaginatedResult with suppliers
+            Dictionary containing paginated suppliers
         """
         try:
             # Validate pagination
@@ -237,7 +237,7 @@ class SupplierService:
             current_app.logger.error(f"Error listing suppliers: {str(e)}")
             raise BusinessLogicError(f"Error al listar proveedores: {str(e)}")
     
-    def get_all_suppliers(self):
+    def get_all_suppliers(self) -> List[Supplier]:
         """
         Get all active suppliers without pagination.
         

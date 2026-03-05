@@ -1,7 +1,7 @@
 """
 Movement Service - Business logic for inventory movement management.
 """
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from datetime import datetime, date
 from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
@@ -125,7 +125,7 @@ class MovementService:
             return movement
         return None
     
-    def get_movements_by_date(self, fecha: date, page: int = 1, per_page: int = 50):
+    def get_movements_by_date(self, fecha: date, page: int = 1, per_page: int = 50) -> Dict[str, Any]:
         """
         Get movements for specific date with pagination.
         
@@ -135,7 +135,7 @@ class MovementService:
             per_page: Items per page
             
         Returns:
-            PaginatedResult with movements
+            Dictionary containing paginated movements for the specified date
         """
         try:
             # Validate pagination
@@ -154,7 +154,7 @@ class MovementService:
             raise BusinessLogicError(f"Error al obtener movimientos: {str(e)}")
     
     def get_movements_by_date_range(self, start_date: date, end_date: date,
-                                    page: int = 1, per_page: int = 50):
+                                    page: int = 1, per_page: int = 50) -> Dict[str, Any]:
         """
         Get movements for date range with pagination.
         
@@ -165,7 +165,7 @@ class MovementService:
             per_page: Items per page
             
         Returns:
-            PaginatedResult with movements
+            Dictionary containing paginated movements within the date range
         """
         try:
             # Validate date range
@@ -231,7 +231,7 @@ class MovementService:
             current_app.logger.error(f"Error getting movement history: {str(e)}")
             raise BusinessLogicError(f"Error al obtener historial de movimientos: {str(e)}")
     
-    def get_today_movements(self, page: int = 1, per_page: int = 50):
+    def get_today_movements(self, page: int = 1, per_page: int = 50) -> Dict[str, Any]:
         """
         Get today's movements with pagination.
         
@@ -240,6 +240,6 @@ class MovementService:
             per_page: Items per page
             
         Returns:
-            PaginatedResult with movements
+            Dictionary containing paginated movements from today
         """
         return self.get_movements_by_date(date.today(), page, per_page)

@@ -221,3 +221,22 @@ class BaseRepository(Generic[T]):
             return query.count()
         except SQLAlchemyError as e:
             raise DatabaseError(f"Error counting {self.model.__name__}", e)
+    
+    def _paginate(self, query, page: int = 1, per_page: int = 20) -> PaginatedResult[T]:
+        """
+        Paginate a query.
+        
+        Args:
+            query: SQLAlchemy query object
+            page: Page number (1-indexed)
+            per_page: Items per page
+            
+        Returns:
+            PaginatedResult with paginated items
+        """
+        try:
+            total = query.count()
+            items = query.offset((page - 1) * per_page).limit(per_page).all()
+            return PaginatedResult(items, total, page, per_page)
+        except SQLAlchemyError as e:
+            raise DatabaseError(f"Error paginating {self.model.__name__}", e)

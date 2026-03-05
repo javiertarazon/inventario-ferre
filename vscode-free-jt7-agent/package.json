@@ -1,0 +1,144 @@
+{
+  "name": "free-jt7-agent",
+  "displayName": "Free JT7 Agent Bootstrap",
+  "description": "Auto-provisions Free JT7 agent instructions in any opened workspace.",
+  "version": "0.3.1",
+  "publisher": "jt7ingenieria",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    }
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:freeJt7Agent.provisionNow",
+    "onCommand:freeJt7Agent.startOpenClawNow"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "freeJt7Agent.provisionNow",
+        "title": "Free JT7: Provision Agent In Workspace"
+      },
+      {
+        "command": "freeJt7Agent.startOpenClawNow",
+        "title": "Free JT7: Start OpenClaw Gateway Now"
+      }
+    ],
+    "configuration": {
+      "title": "Free JT7 Agent",
+      "properties": {
+        "freeJt7Agent.autoProvision": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, create Free JT7 instruction files automatically on workspace open."
+        },
+        "freeJt7Agent.overwriteExistingFiles": {
+          "type": "boolean",
+          "default": false,
+          "description": "When true, overwrite existing AGENTS.md and .github/copilot-instructions.md."
+        },
+        "freeJt7Agent.createCopilotInstructions": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, create .github/copilot-instructions.md in each workspace."
+        },
+        "freeJt7Agent.createTraceabilityFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, create .github/free-jt7-trace.md to keep persistent task traceability."
+        },
+        "freeJt7Agent.showNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications after provisioning files."
+        },
+        "freeJt7Agent.agentFileName": {
+          "type": "string",
+          "default": "AGENTS.md",
+          "description": "Name of the agent instruction file to create at workspace root."
+        },
+        "freeJt7Agent.syncVsCodeSettings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Sync Free JT7 VS Code settings to the active workspace path."
+        },
+        "freeJt7Agent.settingsTarget": {
+          "type": "string",
+          "default": "workspace",
+          "enum": [
+            "global",
+            "workspace"
+          ],
+          "description": "Where to write Free JT7 settings updates. Workspace is recommended for any-project behavior."
+        },
+        "freeJt7Agent.enableSkillCreatorAgent": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, provision .github/agents/skill-creator.agent.md and skill-creator skill files."
+        },
+        "freeJt7Agent.openClawAutoStart": {
+          "type": "boolean",
+          "default": true,
+          "description": "Try to start OpenClaw gateway automatically after provisioning."
+        },
+        "freeJt7Agent.openClawProjectPath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the project that contains skills_manager.py for OpenClaw gateway commands."
+        },
+        "freeJt7Agent.openClawStatusCommand": {
+          "type": "string",
+          "default": "python skills_manager.py gateway-status",
+          "description": "Command used to query OpenClaw gateway status."
+        },
+        "freeJt7Agent.openClawStartCommand": {
+          "type": "string",
+          "default": "python skills_manager.py gateway-start",
+          "description": "Command used to start OpenClaw gateway."
+        },
+        "freeJt7Agent.openClawCommandTimeoutMs": {
+          "type": "number",
+          "default": 120000,
+          "minimum": 1000,
+          "description": "Timeout in milliseconds for OpenClaw status/start commands."
+        },
+        "freeJt7Agent.openClawAutoDetectWorkspaceManager": {
+          "type": "boolean",
+          "default": true,
+          "description": "If true, search skills_manager.py in the opened workspace when openClawProjectPath is empty."
+        }
+      }
+    }
+  },
+  "keywords": [
+    "agent",
+    "instructions",
+    "copilot",
+    "codex",
+    "jt7"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jt7ingenieria/free-jt7-agent"
+  },
+  "files": [
+    "extension.js",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "package": "npx @vscode/vsce package"
+  },
+  "devDependencies": {
+    "@vscode/vsce": "^3.6.2"
+  }
+}

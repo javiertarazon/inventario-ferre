@@ -148,10 +148,14 @@ def register_blueprints(app):
     # Import blueprints
     from app.blueprints import (
         main_bp, products_bp, suppliers_bp, movements_bp,
-        item_groups_bp, customers_bp, sales_orders_bp, pricing_bp
+        item_groups_bp, customers_bp, sales_orders_bp, pricing_bp,
+        reports_bp
     )
     
-    # Register blueprints
+    # Import API v1 blueprints
+    from app.blueprints.api.v1 import auth_bp as api_auth_bp, products_bp as api_products_bp, customers_bp as api_customers_bp
+
+    # Register traditional blueprints (Web UI)
     app.register_blueprint(main_bp)
     app.register_blueprint(products_bp, url_prefix='/products')
     app.register_blueprint(suppliers_bp, url_prefix='/suppliers')
@@ -160,16 +164,52 @@ def register_blueprints(app):
     app.register_blueprint(customers_bp, url_prefix='/customers')
     app.register_blueprint(sales_orders_bp, url_prefix='/orders')
     app.register_blueprint(pricing_bp, url_prefix='/pricing')
+    app.register_blueprint(reports_bp, url_prefix='/reports')
     
-    # Import other blueprints (to be created in subsequent tasks)
-    # from app.blueprints.reports import reports_bp
-    # from app.blueprints.admin import admin_bp
-    # from app.blueprints.api.v1 import api_v1_bp
+    # Register API v1 blueprints (REST API)
+    app.register_blueprint(api_auth_bp)
+    app.register_blueprint(api_products_bp)
+    app.register_blueprint(api_customers_bp)
+
+    # Set up security headers
+    setup_security_headers(app)
+
+
+def setup_security_headers(app):
+    """
+    Configure HTTP security headers.
     
-    # Register other blueprints
-    # app.register_blueprint(reports_bp, url_prefix='/reports')
-    # app.register_blueprint(admin_bp, url_prefix='/admin')
-    # app.register_blueprint(api_v1_bp, url_prefix='/api/v1')
+    Args:
+        app: Flask application instance
+    """
+    @app.after_request
+    def set_security_headers(response):
+        """Add security headers to every response."""
+        # Prevent MIME type sniffing
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        
+        # Enable XSS protection in older browsers
+        response.headers['X-XSS-Protection'] = '1; mode=block'
+        
+        # Prevent clickjacking
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN'
+        
+        # Referrer policy
+        response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+        
+        # Permissions policy (formerly Feature Policy)
+        response.headers['Permissions-Policy'] = 'geolocation=(), microphone=(), camera=()'
+        
+        # Content Security Policy (permisivo para desarrollo)
+        if not app.debug:
+            response.headers['Content-Security-Policy'] = "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:"
+        
+        # HSTS header (solo en producción)
+        if app.config.get('PREFERRED_URL_SCHEME') == 'https':
+            response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+        
+        return response
+
 
 
 def register_commands(app):
@@ -183,8 +223,7 @@ def register_commands(app):
     def init_db():
         """Initialize the database."""
         db.create_all()
-        app.logger.info('Database initialized')
-        print('Database initialized successfully')
+        app.logger.info('Database initialized successfully')
     
     @app.cli.command()
     def validate_config():
@@ -192,7 +231,7 @@ def register_commands(app):
         try:
             config_class = get_config(os.environ.get('FLASK_ENV', 'development'))
             config_class.validate()
-            print('Configuration is valid')
+            app.logger.info('Configuration is valid')
         except ValueError as e:
-            print(f'Configuration error: {e}')
+            app.logger.error(f'Configuration validation error: {e}')
             return 1
