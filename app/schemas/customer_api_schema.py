@@ -8,12 +8,12 @@ import re
 
 class CustomerCreateSchema(Schema):
     """Schema for creating a customer via API."""
-    nombre = fields.Str(required=True, description="Customer name")
-    apellido = fields.Str(required=True, description="Customer last name")
-    email = fields.Email(required=True, description="Customer email")
-    telefono = fields.Str(allow_none=True, description="Customer phone")
-    direccion = fields.Str(allow_none=True, description="Customer address")
-    ciudad = fields.Str(allow_none=True, description="Customer city")
+    nombre = fields.Str(required=True, metadata={"description": "Customer name"})
+    apellido = fields.Str(required=True, metadata={"description": "Customer last name"})
+    email = fields.Email(required=True, metadata={"description": "Customer email"})
+    telefono = fields.Str(allow_none=True, metadata={"description": "Customer phone"})
+    direccion = fields.Str(allow_none=True, metadata={"description": "Customer address"})
+    ciudad = fields.Str(allow_none=True, metadata={"description": "Customer city"})
     
     @validates('nombre')
     def validate_nombre(self, value, **kwargs):

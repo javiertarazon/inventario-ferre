@@ -9,13 +9,13 @@ import re
 
 class ProductCreateSchema(Schema):
     """Schema for creating a product via API."""
-    codigo = fields.Str(required=True, description="Product code in format X-XX-XX")
-    descripcion = fields.Str(required=True, description="Product description")
-    stock = fields.Int(load_default=0, description="Product stock quantity")
-    precio_dolares = fields.Decimal(required=True, places=2, as_string=True, description="Price in USD")
-    proveedor_id = fields.Int(allow_none=True, load_default=None, description="Supplier ID")
-    category_id = fields.Int(allow_none=True, load_default=None, description="Category/Item Group ID")
-    reorder_point = fields.Int(allow_none=True, load_default=10, description="Minimum stock to trigger reorder")
+    codigo = fields.Str(required=True, metadata={"description": "Product code in format X-XX-XX"})
+    descripcion = fields.Str(required=True, metadata={"description": "Product description"})
+    stock = fields.Int(load_default=0, metadata={"description": "Product stock quantity"})
+    precio_dolares = fields.Decimal(required=True, places=2, as_string=True, metadata={"description": "Price in USD"})
+    proveedor_id = fields.Int(allow_none=True, load_default=None, metadata={"description": "Supplier ID"})
+    category_id = fields.Int(allow_none=True, load_default=None, metadata={"description": "Category/Item Group ID"})
+    reorder_point = fields.Int(allow_none=True, load_default=10, metadata={"description": "Minimum stock to trigger reorder"})
     
     @validates('codigo')
     def validate_codigo(self, value, **kwargs):

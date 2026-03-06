@@ -16,11 +16,11 @@ class MovementTypeEnum(str, Enum):
 
 class MovementCreateSchema(Schema):
     """Schema for creating an inventory movement via API."""
-    tipo = fields.Str(required=True, description="Movement type: ENTRADA, SALIDA, AJUSTE, DEVOLUCION")
-    producto_id = fields.Int(required=True, description="Product ID")
-    cantidad = fields.Int(required=True, description="Quantity moved")
-    referencia = fields.Str(allow_none=True, description="Reference document or number")
-    razon = fields.Str(allow_none=True, description="Reason for movement")
+    tipo = fields.Str(required=True, metadata={"description": "Movement type: ENTRADA, SALIDA, AJUSTE, DEVOLUCION"})
+    producto_id = fields.Int(required=True, metadata={"description": "Product ID"})
+    cantidad = fields.Int(required=True, metadata={"description": "Quantity moved"})
+    referencia = fields.Str(allow_none=True, metadata={"description": "Reference document or number"})
+    razon = fields.Str(allow_none=True, metadata={"description": "Reason for movement"})
     
     @validates('tipo')
     def validate_tipo(self, value, **kwargs):

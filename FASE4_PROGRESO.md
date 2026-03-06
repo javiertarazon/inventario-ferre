@@ -1,8 +1,9 @@
-# FASE 4: API REST - Progreso Inicial
+# FASE 4: API REST - Progreso
 
 **Fecha Inicio**: 5 de Marzo de 2026  
-**Status Actual**: ✅ Setup Base + Autenticación completado  
-**Rama**: `desarrollo/fase4-api-rest`
+**Status Actual**: ✅ Setup Base + Autenticación + Tests iniciales funcionales
+**Rama**: `desarrollo/fase4-api-rest`  
+**Commit**: ✅ Guardado en rama
 
 ---
 
@@ -108,41 +109,91 @@ DELETE /api/v1/customers/:id       - Eliminar
 
 ---
 
-## ⏳ Pendiente para Completar Fase 4
-
-- [ ] Endpoints de movimientos de inventario
-- [ ] Endpoints de proveedores
-- [ ] Tests para clientes API (test_api_customers.py)
-- [ ] Tests para movimientos API (test_api_movements.py)
-- [ ] Rate limiting para API
-- [ ] CORS configuration para API
-- [ ] Error handling mejorado
-- [ ] Documentación Swagger/OpenAPI
-- [ ] Integration tests completos (10+ tests)
-
----
-
-## Próximos Pasos Inmediatos
-
-1. Ejecutar tests para validar que endpoints funcionan
-2. Crear blueprint de movimientos API
-3. Crear tests de integración
-4. Implementar documentación de API
+## 🧪 Tests API Iniciales
+- ✅ `tests/test_api_auth.py` - 5 tests creados
+  - ✅ test_login_success - PASANDO
+  - ✅ test_login_invalid_credentials - PASANDO
+  - ✅ test_login_missing_email - PASANDO
+  - ⏳ test_get_current_user - Por revisar (issue JWT context)
+  - ✅ test_get_current_user_without_token - PASANDO
+  
+- ✅ `tests/test_api_products.py` - 6 tests creados
+  - estructurados para ejecutar cuando se resuelvan auth issues
 
 ---
 
-## Estadísticas
+## 📊 Status de Tests
 
-| Métrica | Valor |
-|---------|-------|
-| **Blueprints API** | 3 (auth, products, customers) |
-| **Endpoints** | 13 |
-| **Schemas** | 4 |
-| **Tests** | 11 (pendientes más) |
-| **Status** | ✅ Funcionando |
+```
+✅ 4/5 Auth tests pasando (80%)
+   - 3 están completamente funcionales
+   - 1 necesita investigación (JWT token handling)
+
+⏳ 6 Product tests listos pero no ejecutados todavía
+```
+
+## 🔧 Configuración Completada
+
+### app/config.py
+- ✅ Agregados SECRET_KEY y JWT_SECRET_KEY en TestingConfig
+- ✅ Valores por defecto para testing
+- ✅ Compatible con variables de entorno
+
+### app/extensions.py
+- ✅ JWTManager importado e inicializado
+- ✅ JWT integrado en init_extensions()
+
+### app/__init__.py
+- ✅ Importados blueprints API v1
+- ✅ Registrados en app factory
+- ✅ Sin conflictos con blueprints web existentes
 
 ---
 
-*Fase 4 en progreso*  
-*Rama: desarrollo/fase4-api-rest*  
-*Next: Movimientos API + Tests completos*
+## 📋 Endpoints Funcionales
+
+### ✅ Autenticación (3/4 operativos)
+```
+POST   /api/v1/auth/login        - ✅ Funciona
+POST   /api/v1/auth/refresh      - ✅ Implementado
+GET    /api/v1/auth/me           - ⏳ Necesita fix
+POST   /api/v1/auth/logout       - ✅ Implementado
+```
+
+### 📝 Productos (Listos para test)
+```
+GET    /api/v1/products          - ✅ Implementado
+GET    /api/v1/products/:id      - ✅ Implementado
+POST   /api/v1/products          - ✅ Implementado
+PUT    /api/v1/products/:id      - ✅ Implementado
+DELETE /api/v1/products/:id      - ✅ Implementado
+```
+
+### 📝 Clientes (Listos para test)
+```
+GET    /api/v1/customers         - ✅ Implementado
+GET    /api/v1/customers/:id     - ✅ Implementado
+POST   /api/v1/customers         - ✅ Implementado
+PUT    /api/v1/customers/:id     - ✅ Implementado
+DELETE /api/v1/customers/:id     - ✅ Implementado
+```
+
+---
+
+## 🚀 Hitos Alcanzados
+
+| Hito | Status |
+|------|--------|
+| Instalar Flask-JWT-Extended | ✅ |
+| Crear schemas Marshmallow | ✅ |
+| Implementar blueprint auth | ✅ |
+| Implementar blueprint products | ✅ |
+| Implementar blueprint customers | ✅ |
+| Configurar JWT en extensiones | ✅ |
+| Crear tests auth | ✅ |
+| Tests auth _parcialmente_ funcionales | ✅ |
+| Commit a rama | ✅ |
+
+---
+
+## ⚙️ Próximos Pasos
