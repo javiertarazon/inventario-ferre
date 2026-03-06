@@ -71,11 +71,11 @@ def login():
     
     # Create tokens
     access_token = create_access_token(
-        identity=user.id,
+        identity=str(user.id),
         expires_delta=timedelta(hours=24)
     )
     refresh_token = create_refresh_token(
-        identity=user.id
+        identity=str(user.id)
     )
     
     # Prepare response
@@ -110,7 +110,7 @@ def refresh():
           description: Invalid or expired refresh token
     """
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = User.query.get(int(user_id))
     
     if not user or not user.is_active:
         return jsonify({'error': 'User not found or inactive'}), 401
@@ -150,7 +150,7 @@ def get_current_user():
           description: Unauthorized
     """
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    user = User.query.get(int(user_id))
     
     if not user:
         return jsonify({'error': 'User not found'}), 404

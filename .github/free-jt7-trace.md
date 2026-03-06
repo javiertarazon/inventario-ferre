@@ -230,3 +230,26 @@ Session successfully completed Fase 3 (Testing & Validación):
 
 ### Blockers
 - None
+
+## External Request Log (2026-03-05) - V4 Repo Switch
+
+### Completed
+- [x] Clonado nuevo repositorio: `https://github.com/javiertarazon/agente-freejt7-extension-funcional.git`
+- [x] Inicializado contenido v4.0 con documentaci�n t�cnica completa
+- [x] Publicado commit inicial en remoto `main`
+  - Commit: `3b2195b`
+  - Repo local: `E:\javie\agente-freejt7-extension-funcional`
+
+### Files Created (v4.0)
+- `README.md`
+- `VERSION` (`4.0`)
+- `CHANGELOG.md`
+- `docs/00-TRAYECTORIA-ORIGEN.md`
+- `docs/01-MODIFICACIONES-VSCODE-EXTENSION.md`
+- `docs/02-ERRORES-RESUELTOS.md`
+
+### Pending
+- [ ] Importar runtime/c�digo operativo desde v3.1 al repo v4.0 (si se aprueba en siguiente solicitud)
+
+### Blockers
+- Config git local faltante en repo nuevo (`user.name`, `user.email`) -> resuelto configurando identidad local.

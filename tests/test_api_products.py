@@ -15,17 +15,23 @@ class TestProductAPI:
     def auth_headers(self, client, app):
         """Create authorization headers with valid token."""
         with app.app_context():
+            from app.extensions import db, bcrypt
+            
+            # Generate password hash
+            password_hash = bcrypt.generate_password_hash('password123').decode('utf-8')
+            
             user = User(
                 email='apitest@example.com',
                 username='apitestuser',
+                password_hash=password_hash,
                 is_active=True
             )
-            from app.extensions import db
             db.session.add(user)
             db.session.commit()
             user_id = user.id
             
-            token = create_access_token(identity=user_id)
+            # JWT identity must be a string
+            token = create_access_token(identity=str(user_id))
         
         return {'Authorization': f'Bearer {token}'}
     

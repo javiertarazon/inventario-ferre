@@ -59,22 +59,26 @@ class TestAuthAPI:
     
     def test_get_current_user(self, client, app):
         """Test getting current user info."""
-        # Create test user and token in app context
-        token = None
+        # Login first to get a valid token
         with app.app_context():
+            from app.extensions import db, bcrypt
             user = User(
                 email='current@example.com',
                 username='currentuser',
+                password_hash=bcrypt.generate_password_hash('password123').decode('utf-8'),
                 is_active=True
             )
-            from app.extensions import db, bcrypt
-            user.password_hash = bcrypt.generate_password_hash('password123').decode('utf-8')
             db.session.add(user)
             db.session.commit()
-            user_id = user.id
-            
-            # Create token INSIDE app context
-            token = create_access_token(identity=user_id)
+        
+        # Login to get token
+        login_response = client.post('/api/v1/auth/login', json={
+            'email': 'current@example.com',
+            'password': 'password123'
+        })
+        
+        assert login_response.status_code == 200
+        token = login_response.get_json()['access_token']
         
         # Test getting current user
         headers = {'Authorization': f'Bearer {token}'}
