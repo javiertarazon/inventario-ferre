@@ -10,12 +10,14 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_caching import Cache
 from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager
 
 # Initialize extensions
 db = SQLAlchemy()
 migrate = Migrate()
 login_manager = LoginManager()
 csrf = CSRFProtect()
+jwt = JWTManager()
 limiter = Limiter(
     key_func=get_remote_address,
     default_limits=["100 per minute"],
@@ -38,9 +40,12 @@ def init_extensions(app):
     
     # Authentication
     login_manager.init_app(app)
-    login_manager.login_view = 'auth.login'
+    login_manager.login_view = 'main.login'
     login_manager.login_message = 'Por favor inicia sesión para acceder a esta página.'
     login_manager.login_message_category = 'info'
+    
+    # JWT Authentication (for API)
+    jwt.init_app(app)
     
     # Security
     csrf.init_app(app)

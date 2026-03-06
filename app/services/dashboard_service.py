@@ -317,8 +317,13 @@ class DashboardService:
         # Create date range
         date_range = [start_date + timedelta(days=x) for x in range(days + 1)]
         
-        # Map sales to dates
-        sales_map = {sale.order_date: float(sale.total) for sale in sales_by_date}
+        # Map sales to dates (SQLite can return order_date as string)
+        def _to_date(val):
+            if isinstance(val, str):
+                return datetime.strptime(val, '%Y-%m-%d').date()
+            return val
+
+        sales_map = {_to_date(sale.order_date): float(sale.total) for sale in sales_by_date}
         
         labels = [d.strftime('%d/%m') for d in date_range]
         values = [sales_map.get(d, 0) for d in date_range]

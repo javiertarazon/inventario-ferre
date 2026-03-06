@@ -10,6 +10,7 @@ from app.blueprints.item_groups import item_groups_bp
 from app.blueprints.customers import customers_bp
 from app.blueprints.sales_orders import sales_orders_bp
 from app.blueprints.pricing import pricing_bp
+from app.blueprints.reports import reports_bp
 
 __all__ = [
     'main_bp',
@@ -19,5 +20,6 @@ __all__ = [
     'item_groups_bp',
     'customers_bp',
     'sales_orders_bp',
-    'pricing_bp'
+    'pricing_bp',
+    'reports_bp',
 ]

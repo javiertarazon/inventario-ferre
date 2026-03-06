@@ -1,7 +1,7 @@
 """
 Customer Service - Business logic for customer management.
 """
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 from datetime import datetime
 from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
@@ -104,7 +104,24 @@ class CustomerService:
             raise BusinessLogicError(f"Error inesperado al crear el cliente: {str(e)}")
     
     def update_customer(self, customer_id: int, data: Dict[str, Any], user_id: int) -> Customer:
-        """Update existing customer."""
+        """Update existing customer.
+        
+        Updates specified customer fields with validation, preventing duplicate
+        email and RIF/NIT values across the customer database.
+        
+        Args:
+            customer_id: ID of customer to update
+            data: Dictionary of fields to update  
+            user_id: ID of user performing the update
+            
+        Returns:
+            Updated Customer instance with all changes persisted
+            
+        Raises:
+            NotFoundError: If customer not found or already deleted
+            ValidationError: If data validation fails
+            DatabaseError: If database operation fails
+        """
         try:
             # Get existing customer
             customer = self.customer_repo.get_by_id(customer_id)
@@ -184,7 +201,22 @@ class CustomerService:
             raise BusinessLogicError(f"Error inesperado al actualizar el cliente: {str(e)}")
     
     def delete_customer(self, customer_id: int, user_id: int) -> bool:
-        """Soft delete customer."""
+        """Soft delete customer.
+        
+        Soft-deletes customer record (sets deleted_at timestamp) rather than
+        removing the record, preserving referential integrity and audit trail.
+        
+        Args:
+            customer_id: ID of customer to delete
+            user_id: ID of user performing the deletion
+            
+        Returns:
+            True if deletion successful
+            
+        Raises:
+            NotFoundError: If customer not found or already deleted
+            DatabaseError: If database operation fails
+        """
         try:
             customer = self.customer_repo.get_by_id(customer_id)
             if not customer or customer.deleted_at is not None:
@@ -213,14 +245,39 @@ class CustomerService:
             raise BusinessLogicError(f"Error inesperado al eliminar el cliente: {str(e)}")
     
     def get_customer(self, customer_id: int) -> Optional[Customer]:
-        """Get customer by ID."""
+        """Get customer by ID.
+        
+        Retrieves a customer by their ID, excluding soft-deleted customers.
+        
+        Args:
+            customer_id: ID of customer to retrieve
+            
+        Returns:
+            Customer instance if found and not deleted, None otherwise
+        """
         customer = self.customer_repo.get_by_id(customer_id)
         if customer and customer.deleted_at is None:
             return customer
         return None
     
-    def list_customers(self, page: int = 1, per_page: int = 20):
-        """List all active customers with pagination."""
+    def list_customers(self, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
+        """List all active customers with pagination.
+        
+        Args:
+            page: Page number for pagination (starting from 1)
+            per_page: Number of items to return per page (default 20)
+            
+        Returns:
+            Dictionary containing:
+                - items: List of Customer objects
+                - total: Total count of customers
+                - pages: Total number of pages
+                - current_page: Current page number
+                - per_page: Items per page used
+                
+        Raises:
+            BusinessLogicError: If query fails
+        """
         try:
             page, per_page = self.validation_service.validate_pagination(page, per_page)
             return self.customer_repo.get_active_customers(page=page, per_page=per_page)
@@ -228,8 +285,28 @@ class CustomerService:
             current_app.logger.error(f"Error listing customers: {str(e)}")
             raise BusinessLogicError(f"Error al listar clientes: {str(e)}")
     
-    def search_customers(self, query: str, page: int = 1, per_page: int = 20):
-        """Search customers."""
+    def search_customers(self, query: str, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
+        """Search customers.
+        
+        Performs full-text search across customer names, emails, tax IDs,
+        and company names with pagination support.
+        
+        Args:
+            query: Search query string
+            page: Page number for pagination (starting from 1)
+            per_page: Number of items to return per page (default 20)
+            
+        Returns:
+            Dictionary containing:
+                - items: List of matching Customer objects
+                - total: Total count of matches
+                - pages: Total number of pages
+                - current_page: Current page number
+                - per_page: Items per page used
+                
+        Raises:
+            BusinessLogicError: If search operation fails
+        """
         try:
             page, per_page = self.validation_service.validate_pagination(page, per_page)
             return self.customer_repo.search_customers(query=query, page=page, per_page=per_page)
@@ -237,12 +314,17 @@ class CustomerService:
             current_app.logger.error(f"Error searching customers: {str(e)}")
             raise BusinessLogicError(f"Error al buscar clientes: {str(e)}")
 
-    def get_all_customers(self):
-        """
-        Get all active customers without pagination.
+    def get_all_customers(self) -> List[Customer]:
+        """Get all active customers without pagination.
+        
+        Returns all customers that are not soft-deleted. Use with caution
+        on large datasets as no pagination is applied.
         
         Returns:
-            List of all active customers
+            List of all active Customer objects
+            
+        Raises:
+            DatabaseError: If database query fails
         """
         try:
             return self.customer_repo.get_all_list()

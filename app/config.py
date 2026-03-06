@@ -5,15 +5,23 @@ Supports multiple environments: development, testing, production.
 import os
 from datetime import timedelta
 
+# Directorio raíz del proyecto (un nivel arriba de app/)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
 
 class Config:
     """Base configuration class with common settings."""
     
-    # Security
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
+    # Security - MUST be set via environment variable
+    SECRET_KEY = os.environ.get('SECRET_KEY')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{os.path.abspath("instance/inventario.db")}'
+    # Database — resolver rutas relativas de SQLite contra BASE_DIR
+    _db_url = os.environ.get('DATABASE_URL', '')
+    if _db_url.startswith('sqlite:///') and not os.path.isabs(_db_url[len('sqlite:///'):]):
+        SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BASE_DIR, _db_url[len("sqlite:///"):])}'
+    else:
+        SQLALCHEMY_DATABASE_URI = _db_url or f'sqlite:///{os.path.join(BASE_DIR, "instance", "inventario.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
     
@@ -28,46 +36,60 @@ class Config:
     WTF_CSRF_TIME_LIMIT = None
     
     # Rate Limiting
-    RATELIMIT_ENABLED = True
-    RATELIMIT_STORAGE_URL = os.environ.get('REDIS_URL') or 'memory://'
+    RATELIMIT_ENABLED = os.environ.get('RATELIMIT_ENABLED', '1').lower() in ('1', 'true', 'yes')
+    RATELIMIT_STORAGE_URL = os.environ.get('RATELIMIT_STORAGE_URL', 'memory://')
     RATELIMIT_DEFAULT = '100 per minute'
     RATELIMIT_LOGIN = '5 per minute'
     
     # File Upload
-    MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB
-    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or 'uploads'
+    MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 10 * 1024 * 1024))
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER', 'uploads')
     ALLOWED_EXTENSIONS = {'xlsx', 'xls', 'csv'}
     
     # Logging
-    LOG_LEVEL = os.environ.get('LOG_LEVEL') or 'INFO'
-    LOG_FILE = os.environ.get('LOG_FILE') or 'logs/app.log'
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'INFO')
+    LOG_FILE = os.environ.get('LOG_FILE', 'logs/app.log')
     LOG_MAX_BYTES = 10 * 1024 * 1024  # 10MB
     LOG_BACKUP_COUNT = 10
     
     # Backup
-    BACKUP_DIR = os.environ.get('BACKUP_DIR') or 'backups'
-    BACKUP_RETENTION_DAYS = int(os.environ.get('BACKUP_RETENTION_DAYS') or 30)
+    BACKUP_DIR = os.environ.get('BACKUP_DIR', 'backups')
+    BACKUP_RETENTION_DAYS = int(os.environ.get('BACKUP_RETENTION_DAYS', 30))
     
     # Cache
-    CACHE_TYPE = os.environ.get('CACHE_TYPE') or 'simple'
+    CACHE_TYPE = os.environ.get('CACHE_TYPE', 'simple')
     CACHE_DEFAULT_TIMEOUT = 300
     CACHE_REDIS_URL = os.environ.get('REDIS_URL')
     
     # Pagination
-    ITEMS_PER_PAGE = int(os.environ.get('ITEMS_PER_PAGE') or 20)
+    ITEMS_PER_PAGE = int(os.environ.get('ITEMS_PER_PAGE', 20))
     
     # JWT
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or SECRET_KEY
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     JWT_REFRESH_TOKEN_EXPIRES = timedelta(days=30)
     
+    # Feature flags
+    ENABLE_API = os.environ.get('ENABLE_API', '1').lower() in ('1', 'true', 'yes')
+    ENABLE_WEBHOOKS = os.environ.get('ENABLE_WEBHOOKS', '0').lower() in ('1', 'true', 'yes')
+    ENABLE_OFFLINE_MODE = os.environ.get('ENABLE_OFFLINE_MODE', '0').lower() in ('1', 'true', 'yes')
+    
     @staticmethod
     def validate():
-        """Validate required configuration values."""
+        """
+        Validate required configuration values.
+        Called in production to ensure all critical settings are present.
+        """
         required_vars = []
         
-        if Config.SECRET_KEY == 'dev-secret-key-change-in-production':
-            required_vars.append('SECRET_KEY')
+        # Check if SECRET_KEY is set and not a default value
+        secret_key = os.environ.get('SECRET_KEY', '')
+        if not secret_key or len(secret_key) < 32:
+            required_vars.append('SECRET_KEY (must be at least 32 characters)')
+        
+        # Check JWT_SECRET_KEY
+        jwt_secret = os.environ.get('JWT_SECRET_KEY', '')
+        if not jwt_secret or len(jwt_secret) < 32:
+            required_vars.append('JWT_SECRET_KEY (must be at least 32 characters)')
         
         if required_vars:
             raise ValueError(f"Missing required environment variables: {', '.join(required_vars)}")
@@ -79,11 +101,17 @@ class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
     SQLALCHEMY_ECHO = True
-    LOG_LEVEL = 'DEBUG'
+    LOG_LEVEL = os.environ.get('LOG_LEVEL', 'DEBUG')
     
     # Disable some security features for development
     WTF_CSRF_ENABLED = False
     SESSION_COOKIE_SECURE = False
+    
+    # Set default secrets for development if not provided
+    if not Config.SECRET_KEY:
+        SECRET_KEY = 'dev-key-change-in-production-min-32-characters-here!!!!'
+    if not Config.JWT_SECRET_KEY:
+        JWT_SECRET_KEY = 'dev-jwt-key-change-in-production-min-32-characters-here!!!'
 
 
 class TestingConfig(Config):
@@ -97,6 +125,10 @@ class TestingConfig(Config):
     
     # Use simple cache for testing
     CACHE_TYPE = 'simple'
+    
+    # Set testing secrets (safe values for testing only)
+    SECRET_KEY = os.environ.get('SECRET_KEY', 'test-secret-key-must-be-at-least-32-characters-long!!')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'test-jwt-secret-key-must-be-at-least-32-chars-long!!')
 
 
 class ProductionConfig(Config):

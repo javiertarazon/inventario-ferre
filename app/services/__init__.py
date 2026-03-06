@@ -11,6 +11,7 @@ from app.services.dashboard_service import DashboardService
 from app.services.customer_service import CustomerService
 from app.services.sales_order_service import SalesOrderService
 from app.services.import_service import ImportService
+from app.services.reports_service import ReportsService
 
 __all__ = [
     'ValidationService',
@@ -22,4 +23,5 @@ __all__ = [
     'CustomerService',
     'SalesOrderService',
     'ImportService',
+    'ReportsService',
 ]

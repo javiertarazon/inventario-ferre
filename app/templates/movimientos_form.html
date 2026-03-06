@@ -3,68 +3,279 @@
 {% block title %}Nuevo Movimiento - Sistema de Inventario{% endblock %}
 
 {% block content %}
+<style>
+    /* Filtros de producto */
+    .filtros-bar {
+        background: #161b22;
+        border: 1px solid #30363d;
+        border-radius: 8px 8px 0 0;
+        padding: .65rem .9rem;
+        display: flex;
+        gap: .5rem;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .filtros-bar input, .filtros-bar select {
+        background: #0d1117;
+        border: 1px solid #30363d;
+        color: #e6edf3;
+        font-size: .85rem;
+    }
+    .filtros-bar input::placeholder { color: #484f58; }
+    .filtros-bar input:focus, .filtros-bar select:focus {
+        background: #0d1117;
+        border-color: #388bfd;
+        color: #e6edf3;
+        box-shadow: 0 0 0 2px #388bfd30;
+    }
+    .filtros-bar .contador {
+        color: #8b949e;
+        font-size: .78rem;
+        white-space: nowrap;
+        margin-left: auto;
+    }
+
+    /* Tabla de productos */
+    .prod-picker-wrap {
+        border: 1px solid #30363d;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        overflow: hidden;
+    }
+    .prod-picker-scroll {
+        max-height: 240px;
+        overflow-y: auto;
+    }
+    .prod-picker-scroll::-webkit-scrollbar { width: 6px; }
+    .prod-picker-scroll::-webkit-scrollbar-track { background: #161b22; }
+    .prod-picker-scroll::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    .tabla-picker { margin: 0; }
+    .tabla-picker thead th {
+        background: #21262d;
+        color: #8b949e;
+        font-size: .72rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: .5px;
+        padding: .45rem .7rem;
+        border-color: #30363d;
+        position: sticky;
+        top: 0;
+        z-index: 5;
+    }
+    .tabla-picker tbody td {
+        font-size: .84rem;
+        padding: .45rem .7rem;
+        border-color: #21262d;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+    .tabla-picker tbody tr:hover td { background: #1c2128; }
+    .tabla-picker tbody tr.selected-row td {
+        background: #0c2d6b !important;
+        border-color: #388bfd40;
+    }
+    .tabla-picker .cod-cell  { color: #ffa657; font-family: monospace; font-size: .82rem; white-space: nowrap; }
+    .tabla-picker .desc-cell { color: #e6edf3; font-weight: 500; }
+    .tabla-picker .cat-cell  { color: #8b949e; font-size: .8rem; }
+    .tabla-picker .stock-cell { color: #c9d1d9; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+    .tabla-picker .stock-ok   { color: #3fb950; }
+    .tabla-picker .stock-low  { color: #d29922; }
+    .tabla-picker .stock-zero { color: #f85149; }
+    .tabla-picker .sin-resultados td { color: #484f58; text-align: center; padding: 2rem; font-size: .85rem; }
+
+    /* Producto seleccionado */
+    .prod-seleccionado {
+        background: #0c2d6b30;
+        border: 1px solid #388bfd60;
+        border-radius: 8px;
+        padding: .6rem 1rem;
+        display: flex;
+        align-items: center;
+        gap: .75rem;
+        margin-top: .5rem;
+    }
+    .prod-seleccionado .icono { color: #3fb950; font-size: 1.1rem; }
+    .prod-seleccionado .info  { flex: 1; }
+    .prod-seleccionado .inf-cod  { color: #ffa657; font-family: monospace; font-size: .88rem; font-weight: 700; }
+    .prod-seleccionado .inf-desc { color: #e6edf3; font-size: .9rem; }
+    .prod-seleccionado .inf-stock { color: #8b949e; font-size: .82rem; }
+
+    /* Form labels oscuros */
+    .form-label-dark { color: #c9d1d9; font-size: .88rem; font-weight: 500; margin-bottom: .3rem; }
+    .hint-text { color: #8b949e; font-size: .78rem; margin-top: .25rem; }
+</style>
+
 <div class="row">
-    <div class="col-md-8 offset-md-2">
+    <div class="col-xl-7 col-lg-9 offset-xl-0 offset-lg-0 mx-auto">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <a href="{{ url_for('movements.index') }}" class="btn btn-sm btn-secondary">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <span class="h4 fw-bold mb-0" style="color:#e6edf3;">
+                <i class="bi bi-arrow-left-right" style="color:#79c0ff;"></i> Registrar Movimiento
+            </span>
+        </div>
+
         <div class="card">
-            <div class="card-header">
-                <h3><i class="bi bi-arrow-left-right"></i> Registrar Movimiento</h3>
-            </div>
-            <div class="card-body">
-                <form method="post">
-                    <div class="mb-3">
-                        <label for="tipo" class="form-label">Tipo de Movimiento *</label>
-                        <select class="form-select" id="tipo" name="tipo" required>
-                            <option value="">-- Seleccionar Tipo --</option>
-                            <option value="ENTRADA" {% if form_data and form_data.tipo == 'ENTRADA' %}selected{% endif %}>
-                                Entrada (Agregar Stock)
-                            </option>
-                            <option value="SALIDA" {% if form_data and form_data.tipo == 'SALIDA' %}selected{% endif %}>
-                                Salida (Reducir Stock)
-                            </option>
-                            <option value="AJUSTE" {% if form_data and form_data.tipo == 'AJUSTE' %}selected{% endif %}>
-                                Ajuste (Establecer Stock)
-                            </option>
-                        </select>
+            <div class="card-body p-4">
+                <form method="post" id="form-movimiento">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% endwith %}
+
+                    <!-- Tipo de movimiento -->
+                    <div class="mb-4">
+                        <label class="form-label-dark">Tipo de Movimiento *</label>
+                        <div class="d-flex gap-2">
+                            {% set tipo_sel = form_data.tipo if form_data else '' %}
+                            <label class="flex-fill">
+                                <input type="radio" name="tipo" value="ENTRADA" class="d-none tipo-radio"
+                                       {{ 'checked' if tipo_sel == 'ENTRADA' }}>
+                                <div class="tipo-btn text-center py-2 px-3 rounded"
+                                     style="border:1px solid #2ea04340;background:#0f2f1f;color:#3fb950;cursor:pointer;">
+                                    <i class="bi bi-box-arrow-in-down d-block fs-5"></i>
+                                    <span style="font-size:.85rem;font-weight:600;">ENTRADA</span>
+                                </div>
+                            </label>
+                            <label class="flex-fill">
+                                <input type="radio" name="tipo" value="SALIDA" class="d-none tipo-radio"
+                                       {{ 'checked' if tipo_sel == 'SALIDA' }}>
+                                <div class="tipo-btn text-center py-2 px-3 rounded"
+                                     style="border:1px solid #da363340;background:#2b1a1a;color:#f85149;cursor:pointer;">
+                                    <i class="bi bi-box-arrow-up d-block fs-5"></i>
+                                    <span style="font-size:.85rem;font-weight:600;">SALIDA</span>
+                                </div>
+                            </label>
+                            <label class="flex-fill">
+                                <input type="radio" name="tipo" value="AJUSTE" class="d-none tipo-radio"
+                                       {{ 'checked' if tipo_sel == 'AJUSTE' }}>
+                                <div class="tipo-btn text-center py-2 px-3 rounded"
+                                     style="border:1px solid #9e6a0340;background:#2b2418;color:#d29922;cursor:pointer;">
+                                    <i class="bi bi-sliders d-block fs-5"></i>
+                                    <span style="font-size:.85rem;font-weight:600;">AJUSTE</span>
+                                </div>
+                            </label>
+                        </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="producto_id" class="form-label">Producto *</label>
-                        <select class="form-select" id="producto_id" name="producto_id" required>
-                            <option value="">-- Seleccionar Producto --</option>
-                            {% for producto in productos %}
-                            <option value="{{ producto.id }}" 
-                                    data-stock="{{ producto.stock }}"
-                                    {% if form_data and form_data.producto_id|int == producto.id %}selected{% endif %}>
-                                {{ producto.codigo }} - {{ producto.descripcion }} (Stock: {{ producto.stock }})
-                            </option>
-                            {% endfor %}
-                        </select>
-                        <small class="form-text text-muted" id="stock-info"></small>
+
+                    <!-- Selector de producto -->
+                    <div class="mb-4">
+                        <label class="form-label-dark">Producto *</label>
+
+                        <!-- Barra de filtros -->
+                        <div class="filtros-bar">
+                            <input type="text" id="filtro-texto"
+                                   placeholder="&#xF52A;  Buscar por nombre o codigo..."
+                                   class="form-control form-control-sm"
+                                   style="min-width:200px;flex:1 1 200px;"
+                                   autocomplete="off">
+                            <select id="filtro-categoria" class="form-select form-select-sm"
+                                    style="min-width:160px;flex:0 1 200px;">
+                                <option value="">Todas las categorias</option>
+                                {% for cat in categorias %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="button" id="btn-limpiar-filtro"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    title="Limpiar filtros">
+                                <i class="bi bi-x-lg"></i>
+                            </button>
+                            <span class="contador" id="contador-productos">
+                                {{ productos|length }} productos
+                            </span>
+                        </div>
+
+                        <!-- Tabla de productos -->
+                        <div class="prod-picker-wrap">
+                            <div class="prod-picker-scroll">
+                                <table class="table tabla-picker mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Codigo</th>
+                                            <th>Descripcion</th>
+                                            <th>Categoria</th>
+                                            <th class="text-end">Stock</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tbody-productos">
+                                        {% for p in productos %}
+                                        <tr class="prod-fila"
+                                            data-id="{{ p.id }}"
+                                            data-codigo="{{ p.codigo }}"
+                                            data-desc="{{ p.descripcion }}"
+                                            data-busqueda="{{ p.codigo|lower }} {{ p.descripcion|lower }}"
+                                            data-cat="{{ p.item_group_id or '' }}"
+                                            data-stock="{{ p.stock }}"
+                                            data-cat-nombre="{{ p.item_group.name if p.item_group else '' }}"
+                                            onclick="seleccionarProducto(this)">
+                                            <td class="cod-cell">{{ p.codigo }}</td>
+                                            <td class="desc-cell">{{ p.descripcion }}</td>
+                                            <td class="cat-cell">{{ p.item_group.name if p.item_group else '-' }}</td>
+                                            <td class="stock-cell {% if p.stock == 0 %}stock-zero{% elif p.stock <= (p.reorder_point or 5) %}stock-low{% else %}stock-ok{% endif %}">
+                                                {{ p.stock }}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                        <tr id="fila-sin-resultados" style="display:none;" class="sin-resultados">
+                                            <td colspan="4">
+                                                <i class="bi bi-search me-1"></i> Sin resultados para la busqueda
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Input hidden + producto seleccionado -->
+                        <input type="hidden" id="producto_id" name="producto_id" required
+                               value="{{ form_data.producto_id if form_data else '' }}">
+                        <div id="prod-sel-box" class="prod-seleccionado" style="display:none;">
+                            <i class="bi bi-check-circle-fill icono"></i>
+                            <div class="info">
+                                <div class="inf-cod" id="sel-codigo"></div>
+                                <div class="inf-desc" id="sel-desc"></div>
+                                <div class="inf-stock" id="sel-stock"></div>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="limpiarSeleccion()" title="Cambiar producto">
+                                <i class="bi bi-x"></i>
+                            </button>
+                        </div>
+                        <div id="prod-sel-requerido" class="hint-text" style="display:none;color:#f85149;">
+                            <i class="bi bi-exclamation-circle"></i> Selecciona un producto de la lista
+                        </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="cantidad" class="form-label">Cantidad *</label>
-                        <input type="number" class="form-control" id="cantidad" name="cantidad" required min="1"
+
+                    <!-- Cantidad -->
+                    <div class="mb-4">
+                        <label class="form-label-dark" for="cantidad">Cantidad *</label>
+                        <input type="number" class="form-control" id="cantidad" name="cantidad"
+                               required min="1"
                                value="{{ form_data.cantidad if form_data else '' }}">
-                        <small class="form-text text-muted">
-                            Para ENTRADA y SALIDA: cantidad a agregar/quitar. Para AJUSTE: nuevo stock total.
-                        </small>
+                        <div class="hint-text">
+                            ENTRADA / SALIDA: unidades a agregar o quitar. &nbsp;|&nbsp; AJUSTE: nuevo total de stock.
+                        </div>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="fecha" class="form-label">Fecha *</label>
-                        <input type="date" class="form-control" id="fecha" name="fecha" required
-                               value="{{ form_data.fecha if form_data else '' }}"
-                               max="{{ today }}">
+
+                    <!-- Fecha -->
+                    <div class="mb-4">
+                        <label class="form-label-dark" for="fecha">Fecha *</label>
+                        <input type="date" class="form-control" id="fecha" name="fecha"
+                               required value="{{ form_data.fecha if form_data else '' }}">
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="descripcion" class="form-label">Descripción</label>
-                        <textarea class="form-control" id="descripcion" name="descripcion" rows="3" maxlength="500">{{ form_data.descripcion if form_data else '' }}</textarea>
-                        <small class="form-text text-muted">Opcional: motivo del movimiento</small>
+
+                    <!-- Descripcion/Nota -->
+                    <div class="mb-4">
+                        <label class="form-label-dark" for="descripcion">Nota / Motivo</label>
+                        <textarea class="form-control" id="descripcion" name="descripcion"
+                                  rows="2" maxlength="500"
+                                  placeholder="Opcional: motivo del movimiento, numero de factura, etc.">{{ form_data.descripcion if form_data else '' }}</textarea>
                     </div>
-                    
-                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+
+                    <!-- Acciones -->
+                    <div class="d-flex gap-2 justify-content-end">
                         <a href="{{ url_for('movements.index') }}" class="btn btn-secondary">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
@@ -81,21 +292,108 @@
 
 {% block scripts %}
 <script>
-    // Show current stock when product is selected
-    document.getElementById('producto_id').addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const stock = selectedOption.getAttribute('data-stock');
-        const stockInfo = document.getElementById('stock-info');
-        if (stock !== null) {
-            stockInfo.textContent = `Stock actual: ${stock} unidades`;
-        } else {
-            stockInfo.textContent = '';
+(function () {
+    'use strict';
+
+    // ── Fecha por defecto ──────────────────────────────────────────────────────
+    const hoy = new Date().toISOString().split('T')[0];
+    const inputFecha = document.getElementById('fecha');
+    if (!inputFecha.value) inputFecha.value = hoy;
+    inputFecha.max = hoy;
+
+    // ── Tipo de movimiento: resaltar boton seleccionado ───────────────────────
+    function actualizarTipos() {
+        document.querySelectorAll('.tipo-radio').forEach(radio => {
+            const btn = radio.closest('label').querySelector('.tipo-btn');
+            btn.style.opacity = radio.checked ? '1' : '0.45';
+            btn.style.transform = radio.checked ? 'scale(1.03)' : 'scale(1)';
+        });
+    }
+    document.querySelectorAll('.tipo-radio').forEach(r => {
+        r.addEventListener('change', actualizarTipos);
+    });
+    actualizarTipos();
+
+    // ── Filtrado de productos ─────────────────────────────────────────────────
+    const inputTexto   = document.getElementById('filtro-texto');
+    const selectCat    = document.getElementById('filtro-categoria');
+    const btnLimpiar   = document.getElementById('btn-limpiar-filtro');
+    const filas        = document.querySelectorAll('.prod-fila');
+    const sinRes       = document.getElementById('fila-sin-resultados');
+    const contador     = document.getElementById('contador-productos');
+
+    function filtrar() {
+        const texto = inputTexto.value.toLowerCase().trim();
+        const cat   = selectCat.value;
+        let visibles = 0;
+        filas.forEach(fila => {
+            const busq    = fila.dataset.busqueda;
+            const filaCat = fila.dataset.cat;
+            const textOk  = !texto || busq.includes(texto);
+            const catOk   = !cat   || filaCat === cat;
+            const visible = textOk && catOk;
+            fila.style.display = visible ? '' : 'none';
+            if (visible) visibles++;
+        });
+        sinRes.style.display = visibles === 0 ? '' : 'none';
+        contador.textContent = visibles + ' producto' + (visibles !== 1 ? 's' : '');
+    }
+
+    inputTexto.addEventListener('input', filtrar);
+    selectCat.addEventListener('change', filtrar);
+    btnLimpiar.addEventListener('click', function () {
+        inputTexto.value = '';
+        selectCat.value  = '';
+        filtrar();
+        inputTexto.focus();
+    });
+
+    // ── Seleccion de producto ─────────────────────────────────────────────────
+    window.seleccionarProducto = function (fila) {
+        // resaltar fila
+        document.querySelectorAll('.prod-fila').forEach(f => f.classList.remove('selected-row'));
+        fila.classList.add('selected-row');
+
+        const id     = fila.dataset.id;
+        const codigo = fila.dataset.codigo;
+        const desc   = fila.dataset.desc;
+        const stock  = fila.dataset.stock;
+
+        document.getElementById('producto_id').value = id;
+        document.getElementById('sel-codigo').textContent = codigo;
+        document.getElementById('sel-desc').textContent   = desc;
+        document.getElementById('sel-stock').textContent  = 'Stock actual: ' + stock + ' unidades';
+        document.getElementById('prod-sel-box').style.display      = '';
+        document.getElementById('prod-sel-requerido').style.display = 'none';
+
+        // scroll fila visible
+        fila.scrollIntoView({ block: 'nearest' });
+    };
+
+    window.limpiarSeleccion = function () {
+        document.getElementById('producto_id').value = '';
+        document.getElementById('prod-sel-box').style.display = 'none';
+        document.querySelectorAll('.prod-fila').forEach(f => f.classList.remove('selected-row'));
+        inputTexto.focus();
+    };
+
+    // ── Pre-seleccionar si viene de un POST con error ─────────────────────────
+    const preselId = document.getElementById('producto_id').value;
+    if (preselId) {
+        const fila = document.querySelector(`.prod-fila[data-id="${preselId}"]`);
+        if (fila) seleccionarProducto(fila);
+    }
+
+    // ── Validacion antes de submit ────────────────────────────────────────────
+    document.getElementById('form-movimiento').addEventListener('submit', function (e) {
+        const pid = document.getElementById('producto_id').value;
+        if (!pid) {
+            e.preventDefault();
+            document.getElementById('prod-sel-requerido').style.display = '';
+            document.getElementById('filtro-texto').focus();
         }
     });
-    
-    // Set today's date as default
-    const today = new Date().toISOString().split('T')[0];
-    document.getElementById('fecha').value = today;
-    document.getElementById('fecha').max = today;
+
+})();
 </script>
 {% endblock %}

@@ -17,7 +17,7 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" action="{{ url_for('products.index') }}" class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="search_by" class="form-label">Buscar por:</label>
                 <select name="search_by" id="search_by" class="form-select">
                     <option value="all" {% if search_by == 'all' %}selected{% endif %}>Código o Descripción</option>
@@ -25,14 +25,27 @@
                     <option value="descripcion" {% if search_by == 'descripcion' %}selected{% endif %}>Solo Descripción</option>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="item_group_id" class="form-label">Categoría:</label>
                 <select name="item_group_id" id="item_group_id" class="form-select">
-                    <option value="">Todas las categorías</option>
+                    <option value="">Todas</option>
                     {% if categories %}
                         {% for category in categories %}
                         <option value="{{ category.id }}" {% if item_group_id == category.id %}selected{% endif %}>
                             {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    {% endif %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label for="proveedor_id" class="form-label">Proveedor:</label>
+                <select name="proveedor_id" id="proveedor_id" class="form-select">
+                    <option value="">Todos</option>
+                    {% if suppliers %}
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}" {% if proveedor_id == supplier.id %}selected{% endif %}>
+                            {{ supplier.nombre }}
                         </option>
                         {% endfor %}
                     {% endif %}
@@ -49,7 +62,7 @@
                 </button>
             </div>
         </form>
-        {% if query or item_group_id %}
+        {% if query or item_group_id or proveedor_id %}
         <div class="mt-2">
             <a href="{{ url_for('products.index') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-x-circle"></i> Limpiar filtros
@@ -142,14 +155,14 @@
     <ul class="pagination justify-content-center">
         {% if pagination.has_prev %}
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, q=query, search_by=search_by, item_group_id=item_group_id) }}">Anterior</a>
+            <a class="page-link" href="{{ url_for('products.index', page=pagination.prev_num, q=query, search_by=search_by, item_group_id=item_group_id, proveedor_id=proveedor_id) }}">Anterior</a>
         </li>
         {% endif %}
         
         {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
             {% if page_num %}
                 <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
-                    <a class="page-link" href="{{ url_for('products.index', page=page_num, q=query, search_by=search_by, item_group_id=item_group_id) }}">{{ page_num }}</a>
+                    <a class="page-link" href="{{ url_for('products.index', page=page_num, q=query, search_by=search_by, item_group_id=item_group_id, proveedor_id=proveedor_id) }}">{{ page_num }}</a>
                 </li>
             {% else %}
                 <li class="page-item disabled"><span class="page-link">...</span></li>
@@ -158,7 +171,7 @@
         
         {% if pagination.has_next %}
         <li class="page-item">
-            <a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, q=query, search_by=search_by, item_group_id=item_group_id) }}">Siguiente</a>
+            <a class="page-link" href="{{ url_for('products.index', page=pagination.next_num, q=query, search_by=search_by, item_group_id=item_group_id, proveedor_id=proveedor_id) }}">Siguiente</a>
         </li>
         {% endif %}
     </ul>

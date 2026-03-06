@@ -1,0 +1,26 @@
+[
+  {
+    "id": "free-jt7-core",
+    "name": "free-jt7-core",
+    "description": "Core behavior and defaults for Free JT7.",
+    "category": "general",
+    "path": ".github/skills/free-jt7-core/SKILL.md",
+    "gh_path": ".github/skills/free-jt7-core/SKILL.md",
+    "tags": ["freejt7", "core"],
+    "risk": "low",
+    "source": "local",
+    "active": true
+  },
+  {
+    "id": "skill-creator",
+    "name": "skill-creator",
+    "description": "Create or update reusable skills with valid structure.",
+    "category": "meta",
+    "path": ".github/skills/skill-creator/SKILL.md",
+    "gh_path": ".github/skills/skill-creator/SKILL.md",
+    "tags": ["skills", "creator"],
+    "risk": "low",
+    "source": "local",
+    "active": true
+  }
+]

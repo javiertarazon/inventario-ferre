@@ -349,7 +349,7 @@ class SalesOrderService:
             return order
         return None
     
-    def list_orders(self, page: int = 1, per_page: int = 20):
+    def list_orders(self, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
         """List all orders with pagination."""
         try:
             page, per_page = self.validation_service.validate_pagination(page, per_page)
@@ -358,7 +358,7 @@ class SalesOrderService:
             current_app.logger.error(f"Error listing orders: {str(e)}")
             raise BusinessLogicError(f"Error al listar órdenes: {str(e)}")
     
-    def get_orders_by_status(self, status: str, page: int = 1, per_page: int = 20):
+    def get_orders_by_status(self, status: str, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
         """Get orders by status."""
         try:
             page, per_page = self.validation_service.validate_pagination(page, per_page)
@@ -367,7 +367,7 @@ class SalesOrderService:
             current_app.logger.error(f"Error getting orders by status: {str(e)}")
             raise BusinessLogicError(f"Error al obtener órdenes: {str(e)}")
 
-    def get_customer_orders(self, customer_id: int, page: int = 1, per_page: int = 20):
+    def get_customer_orders(self, customer_id: int, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
         """
         Get all orders for a specific customer.
         
@@ -391,7 +391,7 @@ class SalesOrderService:
             current_app.logger.error(f"Database error getting customer orders: {str(e)}")
             raise DatabaseError(f"Error al obtener órdenes del cliente: {str(e)}")
     
-    def get_all_orders(self, page: int = 1, per_page: int = 20):
+    def get_all_orders(self, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
         """
         Get all sales orders with pagination.
         
