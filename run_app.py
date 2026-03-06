@@ -15,35 +15,36 @@ logger = logging.getLogger(__name__)
 # Crear la aplicación
 app = create_app('development')
 
-# Crear las tablas y usuario admin si no existe
-with app.app_context():
-    db.create_all()
-    
-    # Verificar si existe el usuario admin
-    admin = User.query.filter_by(username='admin').first()
-    if not admin:
-        # Generar contraseña segura aleatoria
-        temp_password = secrets.token_urlsafe(12)
+# Crear las tablas y usuario admin solo en el proceso principal (no en el reloader)
+if os.environ.get('WERKZEUG_RUN_MAIN') != 'true':
+    with app.app_context():
+        db.create_all()
         
-        admin = User(
-            username='admin',
-            email=os.environ.get('ADMIN_EMAIL', 'admin@ferreteria.local'),
-            role='admin',
-            is_active=True
-        )
-        admin.set_password(temp_password)
-        db.session.add(admin)
-        db.session.commit()
-        
-        logger.info("=" * 70)
-        logger.info("✅ Usuario admin creado exitosamente")
-        logger.info("=" * 70)
-        logger.info(f"Usuario: admin")
-        logger.info(f"Contraseña temporal: {temp_password}")
-        logger.info("⚠️  CAMBIA ESTA CONTRASEÑA EN EL PRIMER LOGIN")
-        logger.info("=" * 70)
-    else:
-        logger.info("✅ Usuario admin ya existe")
+        # Verificar si existe el usuario admin
+        admin = User.query.filter_by(username='admin').first()
+        if not admin:
+            # Generar contraseña segura aleatoria
+            temp_password = secrets.token_urlsafe(12)
+            
+            admin = User(
+                username='admin',
+                email=os.environ.get('ADMIN_EMAIL', 'admin@ferreteria.local'),
+                role='admin',
+                is_active=True
+            )
+            admin.set_password(temp_password)
+            db.session.add(admin)
+            db.session.commit()
+            
+            logger.info("=" * 70)
+            logger.info("✅ Usuario admin creado exitosamente")
+            logger.info("=" * 70)
+            logger.info(f"Usuario: admin")
+            logger.info(f"Contraseña temporal: {temp_password}")
+            logger.info("⚠️  CAMBIA ESTA CONTRASEÑA EN EL PRIMER LOGIN")
+            logger.info("=" * 70)
+        else:
+            logger.info("✅ Usuario admin ya existe")
 
 if __name__ == '__main__':
     logger.info("\n" + "="*70)

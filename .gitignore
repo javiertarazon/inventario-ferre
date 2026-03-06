@@ -61,6 +61,9 @@ uploads/*
 backups/*
 !backups/.gitkeep
 
+# Data files (Excel imports/exports)
+data/
+
 # Environment variables
 .env
 .env.local
@@ -68,12 +71,14 @@ backups/*
 # Excel files (temporary)
 *.xlsx
 *.xls
-!Libro de Inventario Art 177julioagosto.xlsx
 
 # HTML files (downloaded pages)
 *.html
 !app/templates/*.html
 !templates/*.html
+
+# Temporary files (Claude/AI agent artifacts)
+tmpclaude-*
 
 # Migrations (keep structure, ignore cache)
 migrations/__pycache__/

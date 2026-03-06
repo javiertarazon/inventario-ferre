@@ -5,6 +5,9 @@ Supports multiple environments: development, testing, production.
 import os
 from datetime import timedelta
 
+# Directorio raíz del proyecto (un nivel arriba de app/)
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
 
 class Config:
     """Base configuration class with common settings."""
@@ -13,8 +16,12 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY')
     JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY')
     
-    # Database
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or f'sqlite:///{os.path.abspath("instance/inventario.db")}'
+    # Database — resolver rutas relativas de SQLite contra BASE_DIR
+    _db_url = os.environ.get('DATABASE_URL', '')
+    if _db_url.startswith('sqlite:///') and not os.path.isabs(_db_url[len('sqlite:///'):]):
+        SQLALCHEMY_DATABASE_URI = f'sqlite:///{os.path.join(BASE_DIR, _db_url[len("sqlite:///"):])}'
+    else:
+        SQLALCHEMY_DATABASE_URI = _db_url or f'sqlite:///{os.path.join(BASE_DIR, "instance", "inventario.db")}'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
     

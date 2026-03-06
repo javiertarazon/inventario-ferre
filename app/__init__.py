@@ -153,7 +153,7 @@ def register_blueprints(app):
     )
     
     # Import API v1 blueprints
-    from app.blueprints.api.v1 import auth_bp as api_auth_bp, products_bp as api_products_bp, customers_bp as api_customers_bp
+    from app.blueprints.api.v1 import auth_bp as api_auth_bp, products_bp as api_products_bp, customers_bp as api_customers_bp, movements_bp as api_movements_bp
 
     # Register traditional blueprints (Web UI)
     app.register_blueprint(main_bp)
@@ -170,6 +170,7 @@ def register_blueprints(app):
     app.register_blueprint(api_auth_bp)
     app.register_blueprint(api_products_bp)
     app.register_blueprint(api_customers_bp)
+    app.register_blueprint(api_movements_bp)
 
     # Set up security headers
     setup_security_headers(app)

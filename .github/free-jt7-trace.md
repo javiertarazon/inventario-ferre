@@ -1,16 +1,20 @@
 # Free JT7 Traceability Log
 
 ## Active Plan
-- Plan ID: FASE-4-API-REST-20260305
-- Status: ⏳ IN PROGRESS (~20% complete)
-- Goal: Implementar API REST con JWT authentication, CRUD endpoints para Products, Customers, Suppliers, Movements
-- Last update: 2026-03-05 (Session 1 Infrastructure)
+- Plan ID: CLEANUP-ROOT-20260306
+- Status: ✅ COMPLETADA
+- Goal: Organizar directorio raíz, mover docs, eliminar archivos ajenos y scripts muertos
+- Last update: 2026-03-06
+
+## Previous Plan
+- Plan ID: FASE-4-API-REST-20260305-S3
+- Status: ✅ FASE 4 COMPLETADA (100% complete)
 
 ## Project Status Summary
 - **Fase 1** (Security): ✅ 100% COMPLETE - 7/7 validation checks
 - **Fase 2** (Code Quality): ✅ 87.5% COMPLETE - 63/72 type hints, 71/72 docstrings
 - **Fase 3** (Testing): ✅ 100% COMPLETE - 42/42 tests passing, all workflows validated
-- **Fase 4** (API REST): ⏳ IN PROGRESS - Infrastructure ready, 4/11 API tests passing
+- **Fase 4** (API REST): ✅ 100% COMPLETE - 26/26 API tests + 6/6 integration tests
 
 ## Tasks Completed This Session
 | ID | Task | Status | Evidence |
@@ -253,3 +257,54 @@ Session successfully completed Fase 3 (Testing & Validación):
 
 ### Blockers
 - Config git local faltante en repo nuevo (`user.name`, `user.email`) -> resuelto configurando identidad local.
+
+## External Request Log (2026-03-05) - V4 Functional + VS Code Extension
+
+### Completed
+- [x] Migrado runtime completo al repo `agente-freejt7-extension-funcional` (v4.0)
+  - Incluye: `skills_manager.py`, `.github/*` (skills + policy + agents + instructions), scripts de instalacion
+- [x] Ajustado instalador a remoto v4.0
+  - `setup-project.ps1` ahora usa `https://github.com/javiertarazon/agente-freejt7-extension-funcional.git`
+- [x] Implementada extension VS Code instalable
+  - Archivos: `package.json`, `extension.js`, `.vscodeignore`, `scripts/build-vsix.ps1`
+  - Comandos extension: instalar workspace, runtime doctor, abrir docs
+- [x] Validacion de ejecucion y empaquetado
+  - `python skills_manager.py policy-validate` -> OK
+  - `python skills_manager.py install "E:\javie\tmp-freejt7-install-test3" --ide vscode --force` -> OK
+  - `npm.cmd run package` -> VSIX generado: `agente-freejt7-extension-funcional-4.0.0.vsix`
+- [x] Publicado en remoto
+  - Repo: `https://github.com/javiertarazon/agente-freejt7-extension-funcional.git`
+  - Branch: `main`
+  - Commit: `7f7cb8a`
+
+### Pending
+- [ ] Publicar release GitHub con adjunto `.vsix` (opcional)
+- [ ] Prueba manual de comandos de extension dentro de VS Code UI (opcional)
+
+### Blockers
+- Ninguno tecnico bloqueante.
+- Nota: la ejecucion de scripts `.ps1` desde esta sesion tuvo restricciones de policy del entorno; se valido instalacion via CLI Python y empaquetado VSIX sin fallas.
+
+## Request Log (2026-03-05) - Aceptar scripts pendientes
+
+### Completed
+- [x] Se aceptaron (git add) todos los scripts `.py` pendientes en rama `desarrollo/fase4-api-rest`.
+- [x] Archivos staged:
+  - `app/__init__.py`
+  - `app/blueprints/api/v1/__init__.py`
+  - `app/blueprints/api/v1/movements.py`
+  - `direct_pytest.py`
+  - `mini_test.py`
+  - `run_pytest_simple.py`
+  - `run_tests_fase4.py`
+  - `test_write.py`
+  - `tests/test_api_customers.py`
+  - `tests/test_api_movements.py`
+  - `validate_syntax.py`
+  - `validate_tests_fase4.py`
+
+### Pending
+- [ ] Sin stage: documentos `.md` no solicitados (`CAMBIOS_FASE4_S3.md`, `FASE4_COMPLETADA.md`, `RESUMEN_FASE4_COMPLETA.md`, `VALIDACION_FASE4_COMPLETA.md`).
+
+### Blockers
+- Ninguno.
