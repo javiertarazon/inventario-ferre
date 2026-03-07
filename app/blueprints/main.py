@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_required, current_user, login_user, logout_user
 import pandas as pd
 from app.models import User
+from app.services.company_settings_service import CompanySettingsService
 
 main_bp = Blueprint('main', __name__)
 
@@ -14,9 +15,7 @@ main_bp = Blueprint('main', __name__)
 def index():
     """Home page - redirect to login if not authenticated."""
     if current_user.is_authenticated:
-        from app.models import Product
-        productos = Product.query.filter_by(deleted_at=None).limit(20).all()
-        return render_template('index.html', productos=productos)
+        return redirect(url_for('main.dashboard'))
     return redirect(url_for('main.login'))
 
 
@@ -148,12 +147,14 @@ def inventory_report():
             'exits_amount': df['Salidas - Monto (Bs)'].sum(),
             'final_amount': df['Inv.final - Monto (Bs)'].sum()
         }
+        company = CompanySettingsService().get_company_context()
         
         return render_template('inventario_diario.html',
                              report_data=report_data,
                              totals=totals,
                              start_date=start_date,
-                             end_date=end_date)
+                             end_date=end_date,
+                             company=company)
         
     except Exception as e:
         flash(f'Error al generar reporte: {str(e)}', 'error')
@@ -181,16 +182,17 @@ def export_inventory_report():
         
         import_service = ImportService()
         df = import_service.export_inventory_report(start_date, end_date)
+        company = CompanySettingsService().get_company_context()
         
         # Create Excel file in memory
         output = io.BytesIO()
         with pd.ExcelWriter(output, engine='openpyxl') as writer:
             # Add header rows
             header_df = pd.DataFrame([
-                ['EMPRESA: INVERSIONES FERRE-EXITO, C.A', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-                ['R.I.F. J31764195-7', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-                ['DIRECCION: Calle Bolívar. Palo Negro, Municipio Libertador. Estado Aragua', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-                ['TELEFONO: 0412-7434522', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+                [f"EMPRESA: {company['company_name']}", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+                [f"R.I.F. {company['rif']}", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+                [f"DIRECCION: {company['fiscal_address']}", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+                [f"TELEFONO: {company['phone']}", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
                 ['', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
                 ['Relacion de movimiento de entradas y salidas de los inventarios', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
                 ['De acuerdo al Reglamento de la ley de I.S.L.R artículo 177.', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],

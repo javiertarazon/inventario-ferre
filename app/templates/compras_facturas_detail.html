@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Factura de Compra - Sistema de Inventario{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}"><i class="bi bi-house"></i> Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('purchases.index') }}">Facturas de Compra</a></li>
+        <li class="breadcrumb-item active">{{ factura.invoice_number }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-receipt-cutoff"></i> Factura {{ factura.invoice_number }}</h1>
+        <p class="text-muted mb-0">Proveedor: {{ factura.supplier.nombre }} | Fecha: {{ factura.invoice_date.strftime('%Y-%m-%d') }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h5 class="mb-0">Datos de la factura</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-5">Proveedor</dt>
+                    <dd class="col-sm-7">{{ factura.supplier.nombre }}</dd>
+
+                    <dt class="col-sm-5">Factura</dt>
+                    <dd class="col-sm-7">{{ factura.invoice_number }}</dd>
+
+                    <dt class="col-sm-5">Fecha</dt>
+                    <dd class="col-sm-7">{{ factura.invoice_date.strftime('%Y-%m-%d') }}</dd>
+
+                    <dt class="col-sm-5">Moneda</dt>
+                    <dd class="col-sm-7">{{ factura.currency_code }}</dd>
+
+                    <dt class="col-sm-5">Tasa BCV</dt>
+                    <dd class="col-sm-7">{{ '%.4f'|format(factura.exchange_rate_value or 0) if factura.exchange_rate_value else 'N/D' }}</dd>
+
+                    <dt class="col-sm-5">Subtotal</dt>
+                    <dd class="col-sm-7">{{ '%.4f'|format(factura.subtotal_usd or 0) }}</dd>
+
+                    <dt class="col-sm-5">Base imponible</dt>
+                    <dd class="col-sm-7">{{ '%.4f'|format(factura.taxable_base_usd or 0) }}</dd>
+
+                    <dt class="col-sm-5">IVA</dt>
+                    <dd class="col-sm-7">{{ '%.4f'|format(factura.tax_amount_usd or 0) }}</dd>
+
+                    <dt class="col-sm-5">Total</dt>
+                    <dd class="col-sm-7"><strong>{{ '%.4f'|format(factura.total_usd or 0) }}</strong></dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Productos incluidos</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descripción</th>
+                                <th>Cantidad</th>
+                                <th>Precio USD</th>
+                                <th>Subtotal USD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in factura.items %}
+                            <tr>
+                                <td>{{ item.product.codigo }}</td>
+                                <td>{{ item.description_snapshot }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>{{ '%.4f'|format(item.unit_price_usd or 0) }}</td>
+                                <td>{{ '%.4f'|format(item.line_subtotal_usd or 0) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if factura.notes %}
+                <div class="alert alert-secondary mt-3 mb-0">
+                    <strong>Notas:</strong> {{ factura.notes }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

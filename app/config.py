@@ -72,6 +72,19 @@ class Config:
     ENABLE_API = os.environ.get('ENABLE_API', '1').lower() in ('1', 'true', 'yes')
     ENABLE_WEBHOOKS = os.environ.get('ENABLE_WEBHOOKS', '0').lower() in ('1', 'true', 'yes')
     ENABLE_OFFLINE_MODE = os.environ.get('ENABLE_OFFLINE_MODE', '0').lower() in ('1', 'true', 'yes')
+
+    # BCV sync
+    BCV_RATE_URL = os.environ.get('BCV_RATE_URL', 'https://www.bcv.org.ve/')
+    BCV_CURRENCY_CODE = os.environ.get('BCV_CURRENCY_CODE', 'USD')
+    BCV_TIMEOUT_SECONDS = int(os.environ.get('BCV_TIMEOUT_SECONDS', 15))
+    BCV_USER_AGENT = os.environ.get(
+        'BCV_USER_AGENT',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) FerreExitoInventario/1.0'
+    )
+    BCV_ALLOW_INSECURE_SSL_FALLBACK = os.environ.get(
+        'BCV_ALLOW_INSECURE_SSL_FALLBACK',
+        '1'
+    ).lower() in ('1', 'true', 'yes')
     
     @staticmethod
     def validate():

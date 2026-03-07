@@ -7,6 +7,7 @@ from flask import current_app
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models import Product, Supplier
+from app.models.product import DEFAULT_INVENTORY_ENTRY_DATE
 from app.repositories import ProductRepository, SupplierRepository
 from app.services.validation_service import ValidationService
 from app.utils.exceptions import ValidationError, NotFoundError, DatabaseError, BusinessLogicError
@@ -61,6 +62,7 @@ class ProductService:
             validated_data['updated_by'] = user_id
             validated_data['created_at'] = datetime.utcnow()
             validated_data['updated_at'] = datetime.utcnow()
+            validated_data.setdefault('inventory_entry_date', DEFAULT_INVENTORY_ENTRY_DATE)
             
             # Create product
             product = Product(**validated_data)

@@ -16,6 +16,7 @@ class ProductSchema(Schema):
     precio_dolares = fields.Decimal(places=2, as_string=True, load_default=Decimal('0.00'))
     factor_ajuste = fields.Decimal(places=2, as_string=True, load_default=Decimal('1.00'))
     proveedor_id = fields.Int(allow_none=True, load_default=None)
+    inventory_entry_date = fields.Date(load_default='2024-08-01')
     
     @validates('codigo')
     def validate_codigo(self, value, **kwargs):
@@ -64,6 +65,7 @@ class ProductUpdateSchema(Schema):
     precio_dolares = fields.Decimal(places=2, as_string=True)
     factor_ajuste = fields.Decimal(places=2, as_string=True)
     proveedor_id = fields.Int(allow_none=True)
+    inventory_entry_date = fields.Date(allow_none=True)
     
     @validates('codigo')
     def validate_codigo(self, value, **kwargs):

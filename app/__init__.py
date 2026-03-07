@@ -4,8 +4,10 @@ Creates and configures Flask application instances.
 """
 import os
 import logging
+from datetime import datetime
 from logging.handlers import RotatingFileHandler
 from flask import Flask
+import click
 from app.config import get_config
 from app.extensions import init_extensions, db, login_manager
 
@@ -70,6 +72,16 @@ def create_app(config_name=None):
     
     # Register CLI commands
     register_commands(app)
+
+    @app.context_processor
+    def inject_template_globals():
+        """Provide common template globals without duplicating route code."""
+        from app.services.company_settings_service import CompanySettingsService
+
+        return {
+            'now': datetime.utcnow,
+            'company_profile': CompanySettingsService().get_company_context(),
+        }
     
     # User loader for Flask-Login
     @login_manager.user_loader
@@ -149,11 +161,11 @@ def register_blueprints(app):
     from app.blueprints import (
         main_bp, products_bp, suppliers_bp, movements_bp,
         item_groups_bp, customers_bp, sales_orders_bp, pricing_bp,
-        reports_bp
+        reports_bp, settings_bp, purchases_bp, daily_closures_bp
     )
     
     # Import API v1 blueprints
-    from app.blueprints.api.v1 import auth_bp as api_auth_bp, products_bp as api_products_bp, customers_bp as api_customers_bp, movements_bp as api_movements_bp
+    from app.blueprints.api.v1 import auth_bp as api_auth_bp, products_bp as api_products_bp, customers_bp as api_customers_bp, movements_bp as api_movements_bp, search_bp as api_search_bp
 
     # Register traditional blueprints (Web UI)
     app.register_blueprint(main_bp)
@@ -165,12 +177,16 @@ def register_blueprints(app):
     app.register_blueprint(sales_orders_bp, url_prefix='/orders')
     app.register_blueprint(pricing_bp, url_prefix='/pricing')
     app.register_blueprint(reports_bp, url_prefix='/reports')
+    app.register_blueprint(settings_bp, url_prefix='/settings')
+    app.register_blueprint(purchases_bp, url_prefix='/purchases')
+    app.register_blueprint(daily_closures_bp, url_prefix='/daily-closures')
     
     # Register API v1 blueprints (REST API)
     app.register_blueprint(api_auth_bp)
     app.register_blueprint(api_products_bp)
     app.register_blueprint(api_customers_bp)
     app.register_blueprint(api_movements_bp)
+    app.register_blueprint(api_search_bp)
 
     # Set up security headers
     setup_security_headers(app)
@@ -236,3 +252,16 @@ def register_commands(app):
         except ValueError as e:
             app.logger.error(f'Configuration validation error: {e}')
             return 1
+
+    @app.cli.command('sync-bcv-rate')
+    @click.option('--silent', is_flag=True, help='No imprime resultado en consola')
+    def sync_bcv_rate(silent):
+        """Fetch and persist today's BCV USD exchange rate."""
+        from app.services.exchange_rate_service import ExchangeRateService
+
+        result = ExchangeRateService().sync_today_from_bcv()
+        if not silent:
+            click.echo(
+                f"Tasa BCV sincronizada para {result['date'].isoformat()}: "
+                f"{result['rate']:.4f} Bs/USD"
+            )

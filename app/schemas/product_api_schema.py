@@ -3,7 +3,6 @@ API REST schemas for products.
 """
 
 from marshmallow import Schema, fields, validates, ValidationError as MarshmallowValidationError
-from decimal import Decimal
 import re
 
 
@@ -16,6 +15,7 @@ class ProductCreateSchema(Schema):
     proveedor_id = fields.Int(allow_none=True, load_default=None, metadata={"description": "Supplier ID"})
     category_id = fields.Int(allow_none=True, load_default=None, metadata={"description": "Category/Item Group ID"})
     reorder_point = fields.Int(allow_none=True, load_default=10, metadata={"description": "Minimum stock to trigger reorder"})
+    inventory_entry_date = fields.Date(load_default='2024-08-01', metadata={"description": "Initial inventory entry date"})
     
     @validates('codigo')
     def validate_codigo(self, value, **kwargs):
@@ -57,6 +57,7 @@ class ProductUpdateSchema(Schema):
     proveedor_id = fields.Int(allow_none=True)
     category_id = fields.Int(allow_none=True)
     reorder_point = fields.Int(allow_none=True)
+    inventory_entry_date = fields.Date(allow_none=True)
     
     @validates('descripcion')
     def validate_descripcion(self, value, **kwargs):
@@ -90,6 +91,7 @@ class ProductResponseSchema(Schema):
     proveedor_id = fields.Int(allow_none=True)
     categoria = fields.Str(allow_none=True)
     reorder_point = fields.Int(allow_none=True)
+    inventory_entry_date = fields.Date(allow_none=True)
     created_at = fields.DateTime(dump_only=True)
     updated_at = fields.DateTime(dump_only=True)
     

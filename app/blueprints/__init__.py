@@ -11,6 +11,9 @@ from app.blueprints.customers import customers_bp
 from app.blueprints.sales_orders import sales_orders_bp
 from app.blueprints.pricing import pricing_bp
 from app.blueprints.reports import reports_bp
+from app.blueprints.settings import settings_bp
+from app.blueprints.purchases import purchases_bp
+from app.blueprints.daily_closures import daily_closures_bp
 
 __all__ = [
     'main_bp',
@@ -22,4 +25,7 @@ __all__ = [
     'sales_orders_bp',
     'pricing_bp',
     'reports_bp',
+    'settings_bp',
+    'purchases_bp',
+    'daily_closures_bp',
 ]

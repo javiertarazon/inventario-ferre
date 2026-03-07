@@ -44,6 +44,24 @@ Sistema de gestión de inventario desarrollado con Flask, inspirado en Zoho Inve
   - Creación y actualización masiva de productos
   - Reporte detallado de resultados
 
+### Extensiones Operativas Recientes ✅
+
+- **Configuración de empresa**
+  - Datos fiscales editables desde la interfaz
+  - Encabezados dinámicos en reportes
+
+- **Sincronización BCV**
+  - Consulta manual desde UI
+  - Automatización diaria por script/Task Scheduler
+
+- **Compras por factura**
+  - Historial por proveedor, factura y producto
+  - Registro manual e importación de facturas
+
+- **Cierres diarios de ventas**
+  - Registro/importación de cierres diarios
+  - Reconstrucción estimada de salidas 60% con factura y 40% sin factura
+
 ## 📋 Requisitos
 
 - Python 3.8+
@@ -163,11 +181,11 @@ inventario-ferre/
 
 ## 🗺️ Roadmap
 
-### Fase 2 - En Planificación
-- Gestión de compras y órdenes de compra
-- Múltiples almacenes
-- Transferencias entre almacenes
-- Ajustes de inventario
+### Fase 2 - En Progreso
+- Cierres diarios y reconstrucción de salidas operativas
+- Historial de compras y facturas operativas
+- Reportes fiscales tipo SENIAT en expansión
+- OCR y captura desde imágenes pendiente
 
 ### Fase 3 - Futuro
 - Integración con envíos
@@ -239,5 +257,5 @@ Para reportar problemas o sugerencias, crear un issue en GitHub.
 
 ---
 
-**Versión:** 1.0.0  
-**Última actualización:** Febrero 2026
+**Versión:** 1.2.0  
+**Última actualización:** Marzo 2026

@@ -50,33 +50,40 @@ class CodeGenerator:
     @staticmethod
     def get_description_initials(description: str) -> str:
         """
-        Get initials from first two words of description.
+        Get initials from the first two words of description.
         
         Args:
             description: Product description
             
         Returns:
-            Two-letter code from description (e.g., "SO-PO" from "Socates Porcelana")
+            Two-letter code from first two words (e.g., "MC" from "Martillo Carpintero")
         """
         # Split description into words
         words = description.strip().split()
-        
-        # Filter out very short words (prepositions, articles)
-        meaningful_words = [w for w in words if len(w) > 2]
-        
-        # If we don't have enough meaningful words, use all words
-        if len(meaningful_words) < 2:
-            meaningful_words = words
-        
-        # Get first two words
-        first_word = meaningful_words[0] if len(meaningful_words) > 0 else 'XX'
-        second_word = meaningful_words[1] if len(meaningful_words) > 1 else 'XX'
-        
-        # Clean and get first 2 letters of each word
-        first_initials = CodeGenerator.clean_word(first_word)[:2].ljust(2, 'X')
-        second_initials = CodeGenerator.clean_word(second_word)[:2].ljust(2, 'X')
-        
-        return f"{first_initials}-{second_initials}"
+
+        # Clean words and keep only valid tokens
+        cleaned_words = [CodeGenerator.clean_word(w) for w in words]
+        cleaned_words = [w for w in cleaned_words if w]
+
+        # Prefer initials from words that start with letters (avoid numeric initials like "3").
+        alpha_words = [w for w in cleaned_words if w[0].isalpha()]
+
+        if len(alpha_words) >= 2:
+            return f"{alpha_words[0][0]}{alpha_words[1][0]}"
+
+        if len(alpha_words) == 1:
+            return f"{alpha_words[0][0]}X"
+
+        if len(cleaned_words) >= 2:
+            first = cleaned_words[0][0] if cleaned_words[0][0].isalpha() else 'X'
+            second = cleaned_words[1][0] if cleaned_words[1][0].isalpha() else 'X'
+            return f"{first}{second}"
+
+        if len(cleaned_words) == 1:
+            first = cleaned_words[0][0] if cleaned_words[0][0].isalpha() else 'X'
+            return f"{first}X"
+
+        return "XX"
     
     @staticmethod
     def get_next_sequence(category_prefix: str, description_initials: str) -> int:
@@ -85,7 +92,7 @@ class CodeGenerator:
         
         Args:
             category_prefix: Category prefix (E, P, A, etc.)
-            description_initials: Description initials (SO-PO, CO-GA, etc.)
+            description_initials: Description initials (SO, CO, etc.)
             
         Returns:
             Next sequence number
@@ -101,28 +108,33 @@ class CodeGenerator:
         
         if not existing_products:
             return 1
-        
-        # Extract sequence numbers
-        max_sequence = 0
+
+        # Extract used sequence numbers (2-digit only)
+        used_sequences = set()
         for product in existing_products:
-            # Extract number from code (e.g., "E-SO-PO-03" -> 3)
+            # Extract number from code (e.g., "E-SO-03" -> 3)
             parts = product.codigo.split('-')
-            if len(parts) >= 4:
+            if len(parts) == 3:
                 try:
-                    sequence = int(parts[3])
-                    max_sequence = max(max_sequence, sequence)
+                    sequence = int(parts[2])
+                    if 1 <= sequence <= 99:
+                        used_sequences.add(sequence)
                 except ValueError:
                     continue
-        
-        return max_sequence + 1
+
+        for sequence in range(1, 100):
+            if sequence not in used_sequences:
+                return sequence
+
+        raise ValueError(f"No hay correlativos disponibles para {category_prefix}-{description_initials}")
     
     @staticmethod
     def generate_code(category_name: str, description: str) -> str:
         """
         Generate product code based on category and description.
         
-        Format: {CATEGORY_PREFIX}-{FIRST_WORD_INITIALS}-{SECOND_WORD_INITIALS}-{SEQUENCE}
-        Example: E-SO-PO-01 (Electricidad - Socates Porcelana)
+        Format: {CATEGORY_PREFIX}-{INITIALS}-{SEQUENCE}
+        Example: E-SO-01 (Electricidad - Socates ...)
         
         Args:
             category_name: Name of the category
@@ -134,16 +146,13 @@ class CodeGenerator:
         # Get category prefix
         category_prefix = CodeGenerator.CATEGORY_PREFIXES.get(category_name, 'X')
         
-        # Get description initials
+        # Get description initials from first two words.
         description_initials = CodeGenerator.get_description_initials(description)
-        
-        # Get next sequence number
+
+        # Get next sequence number (1..99)
         sequence = CodeGenerator.get_next_sequence(category_prefix, description_initials)
-        
-        # Build code
-        code = f"{category_prefix}-{description_initials}-{sequence:02d}"
-        
-        return code
+
+        return f"{category_prefix}-{description_initials}-{sequence:02d}"
     
     @staticmethod
     def generate_code_from_item_group_id(item_group_id: int, description: str) -> str:

@@ -4,7 +4,7 @@ Unit tests for ProductService - FASE 3 Testing
 
 import pytest
 from decimal import Decimal
-from datetime import datetime
+from datetime import date, datetime
 from app.utils.exceptions import ValidationError, NotFoundError, DatabaseError
 
 
@@ -36,6 +36,22 @@ class TestProductServiceCreate:
             assert product.descripcion == 'New Product'
             assert product.stock == 50
             assert product.created_by == user_id
+            assert product.inventory_entry_date == date(2024, 8, 1)
+
+    def test_create_product_allows_custom_inventory_entry_date(self, app, product_service, test_user):
+        """Test product creation with explicit inventory entry date."""
+        user_id, _ = test_user
+
+        data = {
+            'codigo': 'B-CD-02',
+            'descripcion': 'Product With Date',
+            'stock': 10,
+            'inventory_entry_date': '2025-01-15',
+        }
+
+        with app.app_context():
+            product = product_service.create_product(data, user_id)
+            assert product.inventory_entry_date == date(2025, 1, 15)
     
     def test_create_product_duplicate_codigo(self, app, product_service, test_user, test_product):
         """Test product creation with duplicate codigo fails."""

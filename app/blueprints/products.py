@@ -98,7 +98,8 @@ def create():
             'proveedor_id': request.form.get('proveedor_id', type=int),
             'item_group_id': request.form.get('item_group_id', type=int) or None,
             'reorder_point': request.form.get('reorder_point', type=int) or None,
-            'reorder_quantity': request.form.get('reorder_quantity', type=int) or None
+            'reorder_quantity': request.form.get('reorder_quantity', type=int) or None,
+            'inventory_entry_date': request.form.get('inventory_entry_date', '').strip() or None,
         }
         
         # Remove empty codigo to trigger auto-generation
@@ -165,7 +166,8 @@ def edit(product_id):
             'proveedor_id': request.form.get('proveedor_id', type=int),
             'item_group_id': request.form.get('item_group_id', type=int) or None,
             'reorder_point': request.form.get('reorder_point', type=int) or None,
-            'reorder_quantity': request.form.get('reorder_quantity', type=int) or None
+            'reorder_quantity': request.form.get('reorder_quantity', type=int) or None,
+            'inventory_entry_date': request.form.get('inventory_entry_date', '').strip() or None,
         }
         
         # Update product

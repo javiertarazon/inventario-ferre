@@ -8,6 +8,7 @@ from sqlalchemy import func, and_
 
 from app.models import Product, Movimiento, SalesOrder, SalesOrderItem, Proveedor, ItemGroup, ExchangeRate
 from app.extensions import db
+from app.services.company_settings_service import CompanySettingsService
 
 
 class ReportsService:
@@ -319,6 +320,7 @@ class ReportsService:
         """
         try:
             exchange_rate = self._get_current_rate()
+            company = self._get_company_profile()
             products = (
                 Product.query
                 .filter_by(deleted_at=None)
@@ -359,11 +361,15 @@ class ReportsService:
                 'total_productos': len(items),
                 'total_usd': round(total_usd, 2),
                 'total_bs': round(total_bs, 2),
-                'empresa': 'INVERSIONES FERRE-EXITO, C.A',
-                'rif': 'J-000000000',
+                'empresa': company['company_name'],
+                'rif': company['rif'],
+                'direccion_fiscal': company['fiscal_address'],
+                'telefono': company['phone'],
+                'correo_electronico': company['email'],
             }
         except Exception as e:
             current_app.logger.error(f"ReportsService.get_libro_inventario error: {e}")
+            company = self._get_company_profile()
             return {
                 'fecha': fecha,
                 'exchange_rate': 0,
@@ -371,8 +377,11 @@ class ReportsService:
                 'total_productos': 0,
                 'total_usd': 0,
                 'total_bs': 0,
-                'empresa': 'INVERSIONES FERRE-EXITO, C.A',
-                'rif': 'J-000000000',
+                'empresa': company['company_name'],
+                'rif': company['rif'],
+                'direccion_fiscal': company['fiscal_address'],
+                'telefono': company['phone'],
+                'correo_electronico': company['email'],
             }
 
     # -------------------------------------------------------------------------
@@ -388,6 +397,13 @@ class ReportsService:
             return 1.0
         except Exception:
             return 1.0
+
+    def _get_company_profile(self) -> Dict[str, Any]:
+        """Return persisted company profile with fallback defaults."""
+        try:
+            return CompanySettingsService().get_company_context()
+        except Exception:
+            return CompanySettingsService.DEFAULTS.copy()
 
     def get_default_date_range(self, days: int = 30) -> tuple[date, date]:
         """Return (start_date, end_date) tuple for the last N days."""
@@ -423,6 +439,7 @@ class ReportsService:
         """
         try:
             exchange_rate = self._get_current_rate()
+            company = self._get_company_profile()
 
             # All movements in the period, ordered by date then product
             movimientos = (
@@ -553,10 +570,12 @@ class ReportsService:
                 'total_movimientos': len(movimientos),
                 'total_entradas': total_entradas,
                 'total_salidas': total_salidas,
-                'empresa': 'INVERSIONES FERRE-EXITO, C.A',
+                'empresa': company['company_name'],
+                'rif': company['rif'],
             }
         except Exception as e:
             current_app.logger.error(f"ReportsService.get_libro_diario error: {e}")
+            company = self._get_company_profile()
             return {
                 'start_date': start_date,
                 'end_date': end_date,
@@ -566,7 +585,8 @@ class ReportsService:
                 'total_movimientos': 0,
                 'total_entradas': 0,
                 'total_salidas': 0,
-                'empresa': 'INVERSIONES FERRE-EXITO, C.A',
+                'empresa': company['company_name'],
+                'rif': company['rif'],
             }
 
     # -------------------------------------------------------------------------
@@ -590,6 +610,7 @@ class ReportsService:
         try:
             from calendar import monthrange
             exchange_rate = self._get_current_rate()
+            company = self._get_company_profile()
 
             # Date boundaries for the requested month
             first_day = date(year, month, 1)
@@ -696,10 +717,12 @@ class ReportsService:
                 'total_salidas': total_salidas,
                 'total_productos': len(filas),
                 'productos_con_movimiento': len(productos_con_movimiento),
-                'empresa': 'INVERSIONES FERRE-EXITO, C.A',
+                'empresa': company['company_name'],
+                'rif': company['rif'],
             }
         except Exception as e:
             current_app.logger.error(f"ReportsService.get_resumen_mensual error: {e}")
+            company = self._get_company_profile()
             return {
                 'year': year, 'month': month,
                 'first_day': date(year, month, 1),
@@ -711,6 +734,7 @@ class ReportsService:
                 'total_entradas': 0, 'total_salidas': 0,
                 'total_productos': 0,
                 'productos_con_movimiento': 0,
-                'empresa': 'INVERSIONES FERRE-EXITO, C.A',
+                'empresa': company['company_name'],
+                'rif': company['rif'],
             }
 

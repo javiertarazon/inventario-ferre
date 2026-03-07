@@ -14,5 +14,7 @@ Guías de instalación, empaquetado, ejecución de tests y uso del sistema.
 ### `reportes/` — Informes y resúmenes ejecutivos
 Reportes de estado, resúmenes de tareas completadas e informes de producción.
 
+- `reportes/RELEASE_1.2.0.md` — Resumen ejecutivo de la entrega con BCV, compras y cierres diarios.
+
 ### `sistema/` — Funcionalidades del sistema
 Documentación de módulos y funcionalidades implementadas (precios, códigos, búsqueda, etc.).

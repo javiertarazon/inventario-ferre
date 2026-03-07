@@ -1,7 +1,7 @@
 """
 Exchange Rate model for currency conversion tracking.
 """
-from datetime import datetime, date
+from datetime import datetime
 from app.extensions import db
 
 
@@ -15,7 +15,7 @@ class ExchangeRate(db.Model):
     
     # Rate information
     date = db.Column(db.Date, nullable=False, unique=True, index=True)
-    rate = db.Column(db.Numeric(10, 2), nullable=False)  # USD to Bs rate
+    rate = db.Column(db.Numeric(12, 4), nullable=False)  # USD to Bs rate
     
     # Audit fields
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

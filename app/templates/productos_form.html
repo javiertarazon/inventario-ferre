@@ -25,6 +25,13 @@
                                value="{{ producto.descripcion if producto else (form_data.descripcion if form_data else '') }}"
                                maxlength="200">
                     </div>
+
+                    <div class="mb-3">
+                        <label for="inventory_entry_date" class="form-label">Fecha inicial de inventario</label>
+                        <input type="date" class="form-control" id="inventory_entry_date" name="inventory_entry_date"
+                               value="{{ producto.inventory_entry_date.isoformat() if producto and producto.inventory_entry_date else (form_data.inventory_entry_date if form_data else '2024-08-01') }}">
+                        <small class="form-text text-muted">Por defecto se usa 2024-08-01 para inventario de arranque.</small>
+                    </div>
                     
                     <div class="mb-3">
                         <label for="item_group_id" class="form-label">Categoría</label>

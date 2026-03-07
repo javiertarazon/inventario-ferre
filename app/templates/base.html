@@ -6,6 +6,7 @@
     <title>{% block title %}Sistema de Inventario{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    {% block extra_css %}{% endblock %}
     <style>
         :root {
             --bs-body-bg: #0d1117;
@@ -105,7 +106,7 @@
         
         .btn-secondary:hover {
             background-color: #3c444d;
-            border-color: #3c444d);
+            border-color: #3c444d;
         }
         
         .btn-danger {
@@ -243,6 +244,113 @@
             border-color: var(--bs-border-color);
             opacity: 1;
         }
+        
+        /* ── Toast notifications ── */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1090;
+        }
+        .toast {
+            background-color: var(--card-bg);
+            border: 1px solid var(--bs-border-color);
+            color: var(--bs-body-color);
+            box-shadow: 0 8px 24px rgba(0,0,0,.4);
+        }
+        .toast-header {
+            background-color: var(--sidebar-bg);
+            border-bottom-color: var(--bs-border-color);
+            color: var(--bs-body-color);
+        }
+        
+        /* ── Global search ── */
+        .global-search {
+            position: relative;
+            max-width: 320px;
+        }
+        .global-search .form-control {
+            padding-left: 2.2rem;
+            border-radius: 20px;
+            font-size: .875rem;
+        }
+        .global-search .search-icon {
+            position: absolute;
+            left: .75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8b949e;
+            pointer-events: none;
+        }
+        .search-results-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--bs-border-color);
+            border-radius: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+            z-index: 1080;
+            box-shadow: 0 8px 24px rgba(0,0,0,.4);
+        }
+        .search-results-dropdown.show { display: block; }
+        .search-result-item {
+            padding: .5rem .75rem;
+            border-bottom: 1px solid var(--bs-border-color);
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .search-result-item:hover { background: var(--hover-bg); }
+        .search-result-item:last-child { border-bottom: none; }
+        
+        /* ── Overlay spinner ── */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(13,17,23,.7);
+            z-index: 1100;
+            display: none;
+            place-items: center;
+        }
+        .loading-overlay.active { display: grid; }
+        .loading-overlay .spinner-border {
+            width: 3rem;
+            height: 3rem;
+            color: #58a6ff;
+        }
+        
+        /* ── Delete modal ── */
+        .modal-confirm .modal-header { border-bottom-color: #da3633; }
+        .modal-confirm .modal-title { color: #f85149; }
+        
+        /* ── Breadcrumbs ── */
+        .breadcrumb {
+            background: transparent;
+            padding: 0;
+            margin-bottom: .5rem;
+            font-size: .85rem;
+        }
+        .breadcrumb-item a { color: #8b949e; text-decoration: none; }
+        .breadcrumb-item a:hover { color: #58a6ff; }
+        .breadcrumb-item.active { color: var(--bs-body-color); }
+        
+        /* ── Better tables (sorting cues) ── */
+        .table th.sortable {
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+        }
+        .table th.sortable:hover { color: #58a6ff; }
+        .table th.sortable::after { content: ' ⇅'; opacity: .4; font-size: .75em; }
+        .table th.sortable.asc::after { content: ' ▲'; opacity: 1; }
+        .table th.sortable.desc::after { content: ' ▼'; opacity: 1; }
+        
+        /* ── Smooth page transitions ── */
+        .fade-in { animation: fadeIn .25s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
     </style>
 </head>
 <body>
@@ -286,6 +394,38 @@
                         <a class="nav-link" href="{{ url_for('suppliers.index') }}">
                             <i class="bi bi-truck"></i> Proveedores
                         </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="purchasesDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-receipt"></i> Compras
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('purchases.index') }}">
+                                <i class="bi bi-receipt"></i> Facturas de Compra
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('purchases.create') }}">
+                                <i class="bi bi-plus-circle"></i> Registrar Factura
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('purchases.import_invoices') }}">
+                                <i class="bi bi-upload"></i> Importar Facturas
+                            </a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="closuresDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-calendar-check"></i> Cierres
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('daily_closures.index') }}">
+                                <i class="bi bi-calendar-check"></i> Cierres Diarios
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('daily_closures.create') }}">
+                                <i class="bi bi-plus-circle"></i> Registrar Cierre
+                            </a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('daily_closures.import_closures') }}">
+                                <i class="bi bi-upload"></i> Importar Cierres
+                            </a></li>
+                        </ul>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('customers.index') }}">
@@ -342,6 +482,17 @@
                     </li>
                     {% endif %}
                 </ul>
+                
+                {% if current_user.is_authenticated %}
+                <!-- Global Search -->
+                <form class="global-search me-3 d-none d-lg-block" autocomplete="off" onsubmit="return false;">
+                    <i class="bi bi-search search-icon"></i>
+                    <input type="text" id="globalSearch" class="form-control form-control-sm"
+                           placeholder="Buscar productos, clientes…" aria-label="Buscar">
+                    <div id="searchResults" class="search-results-dropdown"></div>
+                </form>
+                {% endif %}
+                
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
                     <li class="nav-item dropdown">
@@ -349,6 +500,10 @@
                             <i class="bi bi-person-circle"></i> {{ current_user.username }}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="{{ url_for('settings.company') }}">
+                                <i class="bi bi-building"></i> Configuración Empresa
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
                             <li><a class="dropdown-item" href="{{ url_for('main.logout') }}">
                                 <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
                             </a></li>
@@ -366,7 +521,9 @@
         </div>
     </nav>
     
-    <div class="container-fluid mt-4">
+    <div class="container-fluid mt-4 fade-in">
+        {% block breadcrumb %}{% endblock %}
+        
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -381,7 +538,153 @@
         {% block content %}{% endblock %}
     </div>
     
+    <!-- Toast container -->
+    <div class="toast-container" id="toastContainer"></div>
+    
+    <!-- Delete confirmation modal -->
+    <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content modal-confirm">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-exclamation-triangle"></i> Confirmar</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="confirmDeleteMsg">¿Está seguro de eliminar este elemento?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn">
+                        <i class="bi bi-trash"></i> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="text-center">
+            <div class="spinner-border" role="status"></div>
+            <p class="mt-2 text-light">Cargando…</p>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="text-center text-muted py-3 mt-5" style="border-top:1px solid var(--bs-border-color);font-size:.8rem;">
+        <i class="bi bi-box-seam"></i> {{ company_profile.company_name if company_profile is defined else 'Ferre-Exito Inventario' }} &copy; {{ now().year if now is defined else '2026' }}
+    </footer>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    /* ── Toast helper ── */
+    function showToast(message, type = 'success') {
+        const icons = { success: 'check-circle-fill', danger: 'x-circle-fill', warning: 'exclamation-triangle-fill', info: 'info-circle-fill' };
+        const colors = { success: '#3fb950', danger: '#f85149', warning: '#d29922', info: '#58a6ff' };
+        const container = document.getElementById('toastContainer');
+        const id = 'toast-' + Date.now();
+        const html = `
+            <div id="${id}" class="toast" role="alert" data-bs-delay="4000">
+                <div class="toast-header">
+                    <i class="bi bi-${icons[type] || icons.info}" style="color:${colors[type] || colors.info}"></i>
+                    <strong class="ms-2">${type === 'danger' ? 'Error' : type.charAt(0).toUpperCase() + type.slice(1)}</strong>
+                    <small class="text-muted ms-auto">ahora</small>
+                    <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+        const el = document.getElementById(id);
+        const toast = new bootstrap.Toast(el);
+        toast.show();
+        el.addEventListener('hidden.bs.toast', () => el.remove());
+    }
+
+    /* ── Auto-convert flash alerts to toasts ── */
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.alert.alert-dismissible').forEach(function(alert) {
+            const type = alert.classList.contains('alert-danger') ? 'danger'
+                       : alert.classList.contains('alert-warning') ? 'warning'
+                       : alert.classList.contains('alert-info') ? 'info' : 'success';
+            showToast(alert.textContent.trim(), type);
+            alert.remove();
+        });
+    });
+
+    /* ── Delete confirmation modal ── */
+    let deleteTargetForm = null;
+    function confirmDelete(formId, msg) {
+        deleteTargetForm = document.getElementById(formId);
+        document.getElementById('confirmDeleteMsg').textContent = msg || '¿Está seguro de eliminar este elemento?';
+        new bootstrap.Modal(document.getElementById('confirmDeleteModal')).show();
+    }
+    document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+        if (deleteTargetForm) { deleteTargetForm.submit(); }
+    });
+
+    /* ── Loading overlay helpers ── */
+    function showLoading() { document.getElementById('loadingOverlay').classList.add('active'); }
+    function hideLoading() { document.getElementById('loadingOverlay').classList.remove('active'); }
+
+    /* ── Global search (debounced) ── */
+    (function() {
+        const input = document.getElementById('globalSearch');
+        if (!input) return;
+        const results = document.getElementById('searchResults');
+        let timer;
+
+        input.addEventListener('input', function() {
+            clearTimeout(timer);
+            const q = this.value.trim();
+            if (q.length < 2) { results.classList.remove('show'); return; }
+            timer = setTimeout(function() {
+                fetch('/api/v1/search?q=' + encodeURIComponent(q))
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data.items || data.items.length === 0) {
+                            results.innerHTML = '<div class="search-result-item text-muted">Sin resultados</div>';
+                        } else {
+                            results.innerHTML = data.items.map(item =>
+                                `<a href="${item.url}" class="search-result-item d-block text-decoration-none">
+                                    <i class="bi bi-${item.icon || 'box'} me-1"></i>
+                                    <strong>${item.title}</strong>
+                                    <small class="text-muted d-block">${item.subtitle || ''}</small>
+                                </a>`
+                            ).join('');
+                        }
+                        results.classList.add('show');
+                    })
+                    .catch(() => { results.classList.remove('show'); });
+            }, 300);
+        });
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.global-search')) results.classList.remove('show');
+        });
+    })();
+
+    /* ── Client-side table sorting ── */
+    document.querySelectorAll('th.sortable').forEach(function(th) {
+        th.addEventListener('click', function() {
+            const table = th.closest('table');
+            const tbody = table.querySelector('tbody');
+            const idx = Array.from(th.parentNode.children).indexOf(th);
+            const asc = !th.classList.contains('asc');
+            th.parentNode.querySelectorAll('th').forEach(h => h.classList.remove('asc','desc'));
+            th.classList.add(asc ? 'asc' : 'desc');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            rows.sort(function(a, b) {
+                let va = a.children[idx].textContent.trim();
+                let vb = b.children[idx].textContent.trim();
+                const na = parseFloat(va.replace(/[^0-9.\-]/g, ''));
+                const nb = parseFloat(vb.replace(/[^0-9.\-]/g, ''));
+                if (!isNaN(na) && !isNaN(nb)) return asc ? na - nb : nb - na;
+                return asc ? va.localeCompare(vb, 'es') : vb.localeCompare(va, 'es');
+            });
+            rows.forEach(r => tbody.appendChild(r));
+        });
+    });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

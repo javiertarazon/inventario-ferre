@@ -1,20 +1,268 @@
 # Free JT7 Traceability Log
 
+## Request Log (2026-03-07) - Configuracion de empresa y automatizacion diaria BCV
+
+### Completed
+- [x] Creado modulo persistente de configuracion de empresa
+  - Modelo nuevo `CompanySettings`
+  - Servicio `CompanySettingsService`
+  - Vista administrativa `/settings/company`
+- [x] Integrada la configuracion de empresa en vistas y reportes principales
+  - Encabezados dinamicos en reportes HTML y exportaciones Excel
+  - Contexto global de plantilla con `company_profile`
+- [x] Implementada automatizacion de tasa BCV
+  - Servicio `ExchangeRateService`
+  - Sincronizacion manual desde UI en `/pricing/sync-rate`
+  - Comando CLI `flask sync-bcv-rate`
+  - Script `scripts/sync_bcv_rate.py` para Task Scheduler
+  - Wrapper Windows `scripts/sync_bcv_rate.bat`
+- [x] Preparada migracion de base de datos
+  - Nueva tabla `company_settings`
+  - Precision de `exchange_rates.rate` ampliada a `Numeric(12,4)`
+- [x] Migracion ejecutada en base de desarrollo
+- [x] Configurada tarea programada real del sistema operativo
+  - Nombre: `FerreExito\SyncBCVDiario`
+  - Frecuencia: diaria a las `08:00`
+- [x] Resueltos problemas reales de ejecucion BCV en Windows
+  - Import directo del paquete `app` al ejecutar el script
+  - SSL con `certifi` y fallback inseguro controlado por configuracion
+  - Parser adaptado al HTML actual del BCV (`div id="dolar"`)
+- [x] Agregadas pruebas automatizadas de regresion
+  - `tests/test_company_settings.py`
+  - `tests/test_exchange_rate_service.py`
+- [x] Verificacion ejecutada
+  - Resultado: `7 passed` en pruebas objetivo
+  - Archivos editados sin errores estaticos reportados
+  - Sincronizacion real confirmada: `433.1664` Bs/USD persistida en desarrollo
+
+### Pending
+- [ ] Validacion manual en navegador del flujo `/settings/company` y boton de sincronizacion BCV
+- [ ] Ajustar la hora de la tarea programada si el negocio requiere otra ventana diaria
+
+### Blockers
+- Ninguno tecnico bloqueante para esta fase.
+- Advertencias no bloqueantes en pruebas por `datetime.utcnow()` deprecado y cache de pytest en Windows.
+
+## Request Log (2026-03-07) - Fase inicial de inventario e historial de compras
+
+### Completed
+- [x] Agregada fecha inicial de inventario en productos
+  - Nuevo campo `products.inventory_entry_date`
+  - Default funcional y de migracion: `2024-08-01`
+  - Integrado en validacion, servicio, esquemas y formulario web
+- [x] Agregada base de historial de compras por factura
+  - Nuevos modelos `PurchaseInvoice` y `PurchaseInvoiceItem`
+  - Soporte historico para multiples compras del mismo producto con distintos proveedores y precios
+- [x] Agregado servicio de compras
+  - `PurchaseInvoiceService.create_purchase_invoice(...)`
+  - Registra cabecera, lineas, movimiento `ENTRADA` y actualiza stock del producto
+  - Mantiene compatibilidad actualizando `product.proveedor_id` y `product.precio_dolares` con la ultima compra
+- [x] Preparada y ejecutada migracion de base de datos
+  - Revision `9c0d1f4a7b22`
+- [x] Verificacion tecnica minima
+  - Archivos editados sin errores estaticos reportados
+
+### Pending
+- [x] Expuesta UI especifica para registrar y consultar facturas de compra
+- [x] Conectado el importador CSV/XLSX de facturas a `PurchaseInvoiceService`
+- [ ] Validacion funcional completa en navegador y/o pruebas automatizadas mas amplias del nuevo flujo
+- [ ] Continuar fases pendientes del plan maestro: reportes SENIAT completos y OCR
+
+### Blockers
+- Ninguno tecnico bloqueante para esta fase.
+
+### Evidence
+- Nuevo blueprint web `app/blueprints/purchases.py` con listado, alta manual, detalle e importacion
+- Nuevas plantillas de compras integradas al menu principal
+- `ImportService` ampliado para agrupar filas por factura/proveedor y registrar entradas
+- Pruebas focalizadas nuevas del flujo web e importacion de compras
+
+## Request Log (2026-03-07) - Cierres diarios y reconstruccion 60/40
+
+### Completed
+- [x] Agregada base persistente para cierres diarios de ventas
+  - Modelos `DailySalesClosure` y `DailySalesClosureAllocation`
+  - Montos total/facturado/no facturado y reconstruccion estimada
+- [x] Implementado servicio de reconstruccion de salidas
+  - Genera movimientos `SALIDA` estimados por producto segun peso de inventario disponible
+  - Conserva trazabilidad del cierre y de cada asignacion reconstruida
+- [x] Expuesta UI para listar, registrar, ver e importar cierres diarios
+- [x] Extendido `ImportService` para CSV/XLSX de cierres diarios
+
+### Pending
+- [ ] Validar con datos reales del negocio el criterio de distribucion estimada por producto
+- [ ] Afinar los reportes fiscales para explotar cierres y compras en formato SENIAT
+- [ ] Ejecutar pruebas funcionales y automatizadas del nuevo modulo
+
+### Blockers
+- Ninguno tecnico bloqueante para esta fase.
+
+### Evidence
+- Nuevo blueprint `app/blueprints/daily_closures.py`
+- Nuevas plantillas `cierres_diarios_*`
+- Nuevo servicio `DailySalesClosureService`
+- Nueva migracion para cierres y asignaciones reconstruidas
+
+## Request Log (2026-03-06) - Limpieza de duplicados por factor 1.25
+
+### Completed
+- [x] Auditados duplicados con `factor_ajuste = 1.25`
+  - Hallazgo inicial: `441` grupos duplicados, `882` articulos involucrados
+- [x] Ejecutado merge de articulos duplicados por `descripcion normalizada + categoria + proveedor`
+  - Se conserva el articulo no-1.25
+  - Se transfiere stock al articulo conservado
+  - Se reasignan `movimientos` y `sales_order_items`
+  - Los articulos 1.25 duplicados se marcan con soft delete y liberan su codigo unico
+- [x] Ajustado `ImportService` para evitar recrear duplicados por diferencias de formato en descripcion
+  - Se usa descripcion normalizada (`trim + espacios colapsados + uppercase`) por categoria
+- [x] Verificacion posterior ejecutada
+  - `grupos_duplicados_con_125 = 0`
+  - `deleted_factor125 = 441`
+  - `remaining_factor125 = 26` (sin duplicado activo)
+  - Reporte remanentes: `reports/remaining_factor125_products.csv`
+- [x] Normalizados remanentes activos con factor 1.25
+  - `productos_normalizados = 26`
+  - Verificacion final: `active_factor_125 = 0`
+
+### Pending
+- [ ] Ninguna accion pendiente para factor 1.25
+
+### Blockers
+- Ninguno.
+
+## Request Log (2026-03-06) - Rediseño de inicio con resumen ejecutivo
+
+### Completed
+- [x] Reemplazado el enfoque de inicio basado en tabla corta por dashboard ejecutivo
+  - `/` autenticado ahora redirige a `/dashboard`
+- [x] Agregados nuevos métricos ejecutivos en `DashboardService`
+  - Productos totales
+  - Total USD y total Bs global
+  - Resumen por categoría
+  - Resumen por proveedor
+  - Productos en alerta de stock con total USD/Bs
+- [x] Actualizada la vista `dashboard.html`
+  - Tarjeta principal `Productos Totales`
+  - Tabla `Cantidad por Categoria`
+  - Tabla `Cantidad por Proveedor`
+  - Tarjeta `Productos en Alerta de Stock`
+  - Visualización de tasa diaria actual
+- [x] Corregidos errores de render del dashboard
+  - `recent_activity` ahora usa `timestamp_display`
+  - `sales_chart` usa acceso correcto a claves del diccionario para `tojson`
+- [x] Verificacion ejecutada
+  - `/dashboard` responde `200`
+  - HTML contiene `Productos Totales`, `Cantidad por Proveedor`, `Cantidad por Categoria` y `Productos en Alerta de Stock`
+
+### Pending
+- [ ] Validación visual del usuario sobre layout, textos y orden de tablas
+
+### Blockers
+- Ninguno.
+
+## Request Log (2026-03-06) - Deteccion y limpieza de productos duplicados
+
+### Completed
+- [x] Creado script seguro de deduplicacion: `scripts/deduplicate_products.py`
+  - Modo `report` (solo diagnostico, sin cambios)
+  - Modo `apply` (soft delete de duplicados + reorganizacion de codigos)
+  - Criterio solicitado: `descripcion + stock + categoria`
+- [x] Generado reporte real en BD actual
+  - CSV: `reports/duplicates_report.csv`
+  - Resultado: `1069` grupos duplicados
+  - Resultado: `3096` registros sugeridos para eliminar
+- [x] Resumen por categoria generado para aprobacion
+  - DELETE por categoria: Miselaneos 1153, Plomeria 970, Electricidad 627, Herreria 222, Albañileria 92, Tornilleria 21, Carpinteria 11
+
+### Pending
+- [x] Confirmacion explicita del usuario para ejecutar `apply`
+- [x] Ejecutada limpieza en BD y reorganizacion de codigos
+  - Resultado: `3096` registros duplicados en soft delete
+  - Resultado: `1526` codigos reorganizados
+- [x] Verificacion post-limpieza ejecutada
+  - Evidencia: `Grupos duplicados: 0` con criterio `descripcion + stock + categoria`
+  - Reporte: `reports/duplicates_report_post_cleanup.csv`
+
+### Blockers
+- Requiere aprobacion del usuario antes de eliminar registros.
+
+## Request Log (2026-03-06) - Fix importacion Excel inventario
+
+### Completed
+- [x] Reproducido y diagnosticado el error masivo de importacion (1046 errores)
+  - Evidencia: mensajes repetidos `El formato del código es inválido. Debe ser: X-XX-XX`
+- [x] Identificada causa raiz en generacion de codigos
+  - `app/utils/code_generator.py` generaba formato largo (`E-SO-PO-01`) incompatible con el validador actual
+- [x] Corregida la generacion de codigo a formato valido
+  - Nuevo formato: `X-XX-XX` (ej. `E-SO-01`)
+  - Ajustado parsing de secuencia para codigos de 3 segmentos
+- [x] Corregido desborde de secuencia (errores residuales en fila 246+)
+  - Causa: para ciertas iniciales la secuencia superaba 99 (`P-CO-100`) y violaba `X-XX-XX`
+  - Fix: `CodeGenerator` ahora prueba iniciales alternativas y garantiza secuencia de 2 digitos
+- [x] Blindado import para codigos fuente invalidos
+  - `ImportService` solo reutiliza `Codigo` del Excel si cumple regex; en caso contrario autogenera codigo valido
+- [x] Verificacion tecnica minima ejecutada
+  - Evidencia: validacion sobre todo el Excel arroja `Total invalidos: 0`
+- [x] Ajustada regla de generacion segun criterio de negocio confirmado por usuario
+  - Formato aplicado: `CategoriaInicial-InitialesDosPrimerasPalabras-Correlativo2Digitos` (ej. `C-MC-01`)
+  - Manejo robusto: iniciales alfabeticas (ignora tokens numericos como `1/2`)
+- [x] Evitada duplicacion por reimportaciones
+  - `ImportService` ahora reutiliza producto existente por `descripcion + categoria` antes de generar nuevo codigo
+
+### Pending
+- [ ] Reintentar importacion completa desde UI para confirmar conteo final de creados/actualizados
+
+### Blockers
+- Ninguno tecnico bloqueante.
+
+## Request Log (2026-03-06) - Fix buscador de precios
+
+### Completed
+- [x] Analizado el endpoint `/pricing/search-products` y reproducido el flujo con cliente autenticado
+  - Evidencia: el endpoint devuelve `200` con sesiÃ³n vÃ¡lida y `401 JSON` sin sesiÃ³n
+- [x] Identificada causa raÃ­z principal en frontend
+  - `pricing_config.html` reutilizaba `id="searchResults"`, que ya existe en `base.html` para la bÃºsqueda global
+  - El resultado del buscador de precios podÃ­a renderizarse en el contenedor equivocado
+- [x] Endurecida la autenticaciÃ³n del endpoint de precios
+  - `app/blueprints/pricing.py`: se eliminÃ³ la lectura manual de `session['_user_id']`
+  - Se usa `current_user.is_authenticated` y se responde `401` JSON consistente
+- [x] Externalizado el JavaScript de precios
+  - Archivo nuevo: `app/static/js/pricing_config.js`
+  - Motivo: evitar dependencia de script inline y aislar la lÃ³gica del buscador
+- [x] Corregida la plantilla del mÃ³dulo de precios
+  - `app/templates/pricing_config.html`: nuevo contenedor `pricingSearchResults`
+  - Se conecta el script externo mediante `url_for('static', ...)`
+- [x] Agregadas pruebas de regresiÃ³n
+  - Archivo nuevo: `tests/test_pricing_blueprint.py`
+  - Cobertura: auth JSON, filtros por categorÃ­a/proveedor, y markup correcto del contenedor/script
+- [x] VerificaciÃ³n ejecutada
+  - Comando: `python -m pytest tests/test_pricing_blueprint.py -q`
+  - Resultado: `3 passed`
+
+### Pending
+- [ ] VerificaciÃ³n manual en navegador del flujo completo sobre `/pricing/`
+
+### Blockers
+- Ninguno tÃ©cnico bloqueante.
+- Advertencia menor: el proyecto sigue emitiendo warnings de dependencias/pytest cache no relacionados con esta correcciÃ³n.
+
 ## Active Plan
-- Plan ID: CLEANUP-ROOT-20260306
+- Plan ID: FASE-5-PRICING-FILTERS-20260306
 - Status: ✅ COMPLETADA
-- Goal: Organizar directorio raíz, mover docs, eliminar archivos ajenos y scripts muertos
-- Last update: 2026-03-06
+- Goal: Agregar filtros proveedor/categoría + auto-búsqueda en precios calculados
+- Last update: 2026-03-06 09:40
+- Implementation: Backend ready, frontend ready para prueba en navegador
 
 ## Previous Plan
-- Plan ID: FASE-4-API-REST-20260305-S3
-- Status: ✅ FASE 4 COMPLETADA (100% complete)
+- Plan ID: CLEANUP-ROOT-20260306
+- Status: ✅ COMPLETADA
 
 ## Project Status Summary
 - **Fase 1** (Security): ✅ 100% COMPLETE - 7/7 validation checks
 - **Fase 2** (Code Quality): ✅ 87.5% COMPLETE - 63/72 type hints, 71/72 docstrings
 - **Fase 3** (Testing): ✅ 100% COMPLETE - 42/42 tests passing, all workflows validated
 - **Fase 4** (API REST): ✅ 100% COMPLETE - 26/26 API tests + 6/6 integration tests
+- **Fase 5** (UI/UX): ⏳ IN PROGRESS - Base implementada
 
 ## Tasks Completed This Session
 | ID | Task | Status | Evidence |

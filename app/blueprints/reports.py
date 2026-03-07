@@ -11,6 +11,7 @@ from flask import (
 )
 from flask_login import login_required
 
+from app.services.company_settings_service import CompanySettingsService
 from app.services.reports_service import ReportsService
 
 reports_bp = Blueprint('reports', __name__)
@@ -392,11 +393,13 @@ def libro_inventario_export():
             df.to_excel(writer, index=False, sheet_name='Libro Inventario')
             ws = writer.sheets['Libro Inventario']
             # Header rows before the table
-            ws.insert_rows(1, amount=4)
-            ws['A1'] = data['empresa']
-            ws['A2'] = f"RIF: {data['rif']}"
-            ws['A3'] = f"LIBRO DE INVENTARIO - Art. 177 ISLR"
-            ws['A4'] = f"Fecha: {fecha.strftime('%d/%m/%Y')}  |  Tasa USD/Bs: {data['exchange_rate']}"
+            company = CompanySettingsService().get_company_context()
+            ws.insert_rows(1, amount=5)
+            ws['A1'] = company['company_name']
+            ws['A2'] = f"RIF: {company['rif']}"
+            ws['A3'] = f"Dirección Fiscal: {company['fiscal_address']}"
+            ws['A4'] = f"Teléfono: {company['phone']}  |  Correo: {company['email']}"
+            ws['A5'] = f"Fecha: {fecha.strftime('%d/%m/%Y')}  |  Tasa USD/Bs: {data['exchange_rate']}"
         output.seek(0)
         filename = f"libro_inventario_{fecha.strftime('%Y-%m-%d')}.xlsx"
         return send_file(
@@ -610,10 +613,12 @@ def resumen_mensual_export():
             df = pd.DataFrame(filas)
             df.to_excel(writer, index=False, sheet_name='Resumen Mensual')
             ws = writer.sheets['Resumen Mensual']
-            ws.insert_rows(1, amount=3)
-            ws['A1'] = data['empresa']
-            ws['A2'] = f"RESUMEN MENSUAL DE INVENTARIO - {MESES_ES.get(month, '')} {year}"
-            ws['A3'] = (
+            company = CompanySettingsService().get_company_context()
+            ws.insert_rows(1, amount=4)
+            ws['A1'] = company['company_name']
+            ws['A2'] = f"RIF: {company['rif']}  |  Teléfono: {company['phone']}"
+            ws['A3'] = f"RESUMEN MENSUAL DE INVENTARIO - {MESES_ES.get(month, '')} {year}"
+            ws['A4'] = (
                 f"Periodo: {data['first_day'].strftime('%d/%m/%Y')} - "
                 f"{data['last_day'].strftime('%d/%m/%Y')}  |  Tasa: {data['exchange_rate']} Bs/$"
             )

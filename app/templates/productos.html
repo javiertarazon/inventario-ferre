@@ -2,6 +2,15 @@
 
 {% block title %}Productos - Sistema de Inventario{% endblock %}
 
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}"><i class="bi bi-house"></i> Inicio</a></li>
+        <li class="breadcrumb-item active">Productos</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
@@ -76,17 +85,17 @@
 <div class="card">
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover" id="productosTable">
                 <thead>
                     <tr>
-                        <th>Código</th>
-                        <th>Descripción</th>
+                        <th class="sortable">Código</th>
+                        <th class="sortable">Descripción</th>
                         <th>Categoría</th>
-                        <th>Stock</th>
-                        <th>Precio USD</th>
-                        <th>Precio Bs</th>
+                        <th class="sortable">Stock</th>
+                        <th class="sortable">Precio USD</th>
+                        <th class="sortable">Precio Bs</th>
                         <th>Factor</th>
-                        <th>Precio Final Bs</th>
+                        <th class="sortable">Precio Final Bs</th>
                         <th>Proveedor</th>
                         <th>Acciones</th>
                     </tr>
@@ -135,7 +144,7 @@
                                     <i class="bi bi-pencil"></i>
                                 </a>
                                 <button type="button" class="btn btn-danger" title="Eliminar" 
-                                        onclick="if(confirm('¿Está seguro de eliminar este producto?')) { document.getElementById('delete-form-{{ producto.id }}').submit(); }">
+                                        onclick="confirmDelete('delete-form-{{ producto.id }}', '¿Eliminar {{ producto.codigo }}?')">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </div>

@@ -164,6 +164,20 @@ class ValidationService:
                         validated_data['reorder_quantity'] = quantity_value
                 except (ValueError, TypeError):
                     errors.append("La cantidad de reorden debe ser un número entero válido")
+
+        # Validate inventory_entry_date
+        inventory_entry_date = data.get('inventory_entry_date')
+        if inventory_entry_date not in (None, ''):
+            try:
+                if isinstance(inventory_entry_date, str):
+                    validated_data['inventory_entry_date'] = datetime.strptime(
+                        inventory_entry_date,
+                        '%Y-%m-%d'
+                    ).date()
+                else:
+                    validated_data['inventory_entry_date'] = inventory_entry_date
+            except (ValueError, TypeError):
+                errors.append("La fecha inicial de inventario debe tener formato YYYY-MM-DD")
         
         if errors:
             raise ValidationError("; ".join(errors))

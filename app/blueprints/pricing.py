@@ -3,12 +3,12 @@ Pricing configuration blueprint - Exchange rate and price adjustment.
 """
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
-from datetime import date, datetime
-from decimal import Decimal
+from datetime import date
 
-from app.models import ExchangeRate, Product, ItemGroup
+from app.models import ExchangeRate, Product, ItemGroup, Proveedor
 from app.extensions import db
 from app.services import ProductService, ItemGroupService
+from app.services.exchange_rate_service import ExchangeRateService
 
 pricing_bp = Blueprint('pricing', __name__, url_prefix='/pricing')
 
@@ -18,27 +18,30 @@ pricing_bp = Blueprint('pricing', __name__, url_prefix='/pricing')
 def index():
     """Pricing configuration page."""
     try:
-        # Get current exchange rate
-        current_rate = ExchangeRate.get_current_rate()
-        
-        # Get recent rates (last 10 days)
-        recent_rates = ExchangeRate.query.order_by(ExchangeRate.date.desc()).limit(10).all()
+        rate_service = ExchangeRateService()
+        current_rate = rate_service.get_current_rate()
+        recent_rates = rate_service.get_recent_rates(limit=10)
         
         # Get all categories for filter
         item_group_service = ItemGroupService()
         categories = item_group_service.get_all_groups()
         
+        # Get all proveedores for filter
+        proveedores = Proveedor.query.filter_by(deleted_at=None).order_by(Proveedor.nombre).all()
+        
         return render_template('pricing_config.html',
                              current_rate=current_rate,
                              recent_rates=recent_rates,
-                             categories=categories)
+                             categories=categories,
+                             proveedores=proveedores)
     
     except Exception as e:
         flash(f'Error al cargar configuración: {str(e)}', 'error')
         return render_template('pricing_config.html',
                              current_rate=None,
                              recent_rates=[],
-                             categories=[])
+                             categories=[],
+                             proveedores=[])
 
 
 @pricing_bp.route('/update-rate', methods=['POST'])
@@ -47,38 +50,31 @@ def update_rate():
     """Update exchange rate for today."""
     try:
         rate_value = request.form.get('rate', type=float)
-        
-        if not rate_value or rate_value <= 0:
-            flash('La tasa de cambio debe ser mayor que cero', 'error')
-            return redirect(url_for('pricing.index'))
-        
-        today = date.today()
-        
-        # Check if rate exists for today
-        existing_rate = ExchangeRate.query.filter_by(date=today).first()
-        
-        if existing_rate:
-            # Update existing rate
-            existing_rate.rate = Decimal(str(rate_value))
-            existing_rate.created_by = current_user.id
-            existing_rate.created_at = datetime.utcnow()
-        else:
-            # Create new rate
-            new_rate = ExchangeRate(
-                date=today,
-                rate=Decimal(str(rate_value)),
-                created_by=current_user.id
-            )
-            db.session.add(new_rate)
-        
-        db.session.commit()
-        
-        flash(f'Tasa de cambio actualizada: {rate_value} Bs/$', 'success')
+        rate_record, _ = ExchangeRateService().upsert_rate(rate_value, target_date=date.today(), user_id=current_user.id)
+        flash(f'Tasa de cambio actualizada: {float(rate_record.rate):.4f} Bs/$', 'success')
         
     except Exception as e:
         db.session.rollback()
         flash(f'Error al actualizar tasa: {str(e)}', 'error')
     
+    return redirect(url_for('pricing.index'))
+
+
+@pricing_bp.route('/sync-rate', methods=['POST'])
+@login_required
+def sync_rate():
+    """Fetch today's rate directly from BCV and store it."""
+    try:
+        result = ExchangeRateService().sync_today_from_bcv(user_id=current_user.id)
+        action = 'registrada' if result['created'] else 'actualizada'
+        flash(
+            f"Tasa BCV sincronizada correctamente: {result['rate']:.4f} Bs/$ ({action})",
+            'success'
+        )
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al sincronizar tasa BCV: {str(e)}', 'error')
+
     return redirect(url_for('pricing.index'))
 
 
@@ -140,12 +136,18 @@ def apply_factor():
 
 
 @pricing_bp.route('/search-products')
-@login_required
 def search_products():
     """Search products and show calculated prices."""
+    if not current_user.is_authenticated:
+        return jsonify({
+            'success': False,
+            'error': 'Debe iniciar sesi\u00f3n para acceder a esta funci\u00f3n'
+        }), 401
+    
     try:
         query = request.args.get('q', '').strip()
         category_id = request.args.get('category_id', type=int)
+        proveedor_id = request.args.get('proveedor_id', type=int)
         
         # Get current rate
         current_rate = ExchangeRate.get_current_rate()
@@ -165,6 +167,9 @@ def search_products():
         if category_id:
             products_query = products_query.filter_by(item_group_id=category_id)
         
+        if proveedor_id:
+            products_query = products_query.filter_by(proveedor_id=proveedor_id)
+        
         products = products_query.limit(50).all()
         
         # Calculate prices
@@ -181,7 +186,8 @@ def search_products():
                 'factor_ajuste': float(product.factor_ajuste),
                 'precio_bs': round(precio_bs, 2),
                 'precio_final_bs': round(precio_final, 2),
-                'categoria': product.item_group.name if product.item_group else 'Sin categoría'
+                'categoria': product.item_group.name if product.item_group else 'Sin categoría',
+                'proveedor': product.proveedor.nombre if product.proveedor else 'Sin proveedor'
             })
         
         return jsonify({

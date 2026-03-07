@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Configuración de Empresa{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-10">
+        <h1><i class="bi bi-building"></i> Configuración de Empresa</h1>
+        <p class="text-muted mb-0">Datos fiscales y de contacto que se reutilizan en reportes y exportaciones.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0"><i class="bi bi-card-checklist"></i> Perfil Fiscal</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('settings.company') }}" class="row g-3">
+                    <div class="col-md-8">
+                        <label for="company_name" class="form-label">Razón Social</label>
+                        <input type="text" class="form-control" id="company_name" name="company_name"
+                               value="{{ company.company_name or '' }}" maxlength="200" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="rif" class="form-label">RIF</label>
+                        <input type="text" class="form-control" id="rif" name="rif"
+                               value="{{ company.rif or '' }}" maxlength="20" required>
+                    </div>
+                    <div class="col-12">
+                        <label for="fiscal_address" class="form-label">Dirección Fiscal</label>
+                        <textarea class="form-control" id="fiscal_address" name="fiscal_address" rows="4"
+                                  maxlength="1000">{{ company.fiscal_address or '' }}</textarea>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="phone" class="form-label">Teléfono</label>
+                        <input type="text" class="form-control" id="phone" name="phone"
+                               value="{{ company.phone or '' }}" maxlength="30">
+                    </div>
+                    <div class="col-md-6">
+                        <label for="email" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="email" name="email"
+                               value="{{ company.email or '' }}" maxlength="255">
+                    </div>
+                    <div class="col-12 d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card h-100">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Uso Actual</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">Estos datos se usan en:</p>
+                <ul class="mb-0">
+                    <li>Libro de inventario</li>
+                    <li>Resumen mensual</li>
+                    <li>Exportaciones Excel</li>
+                    <li>Reporte diario de inventario</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

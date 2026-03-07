@@ -2,6 +2,78 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+## [1.2.0] - 2026-03-07
+
+### ✨ Nuevas Funcionalidades
+
+- **Configuración editable de empresa**
+  - Nuevo módulo para administrar razón social, RIF, dirección fiscal, teléfono y correo.
+  - Contexto global de empresa disponible en reportes y plantillas.
+
+- **Automatización diaria de tasa BCV**
+  - Servicio dedicado para sincronizar tasa USD del BCV.
+  - Integración desde interfaz web, comando CLI y script programable para Windows.
+  - Soporte para fallback SSL controlado por configuración del entorno.
+
+- **Historial de compras por factura y proveedor**
+  - Nuevos modelos de facturas de compra y líneas históricas por producto.
+  - Registro manual e importación CSV/XLSX desde el nuevo módulo de compras.
+  - Actualización automática de stock con movimientos de entrada al registrar compras.
+
+- **Fecha inicial de inventario por producto**
+  - Campo persistente de fecha de entrada inicial con valor de arranque `2024-08-01`.
+  - Integración en validación, formularios web, esquemas y servicios.
+
+- **Cierres diarios con reconstrucción de salidas 60/40**
+  - Nuevo módulo para registrar o importar cierres diarios de ventas.
+  - Reconstrucción estimada de salidas por producto usando peso del inventario disponible.
+  - Trazabilidad entre cierre diario, asignaciones reconstruidas y movimientos `SALIDA` generados.
+
+- **Búsqueda global API v1**
+  - Endpoint adicional de búsqueda para apoyar navegación y localización rápida de entidades.
+
+### 🐛 Correcciones
+
+- **Buscador de precios estabilizado**
+  - Se eliminó conflicto entre el contenedor del buscador global y el buscador del módulo de precios.
+  - Se reforzó la autenticación del endpoint JSON de búsqueda.
+
+- **Sincronización BCV adaptada al entorno real**
+  - Ajuste del parser al HTML actual del BCV.
+  - Corrección del entry point para ejecución externa en scripts programados.
+
+- **Importación y normalización de inventario**
+  - Mejoras en generación de códigos válidos.
+  - Evitada recreación de duplicados por descripciones equivalentes.
+  - Scripts de deduplicación y normalización para productos afectados por factor `1.25`.
+
+### 🧪 Tests Agregados
+
+- `tests/test_company_settings.py`
+- `tests/test_exchange_rate_service.py`
+- `tests/test_pricing_blueprint.py`
+- `tests/test_purchase_invoice_service.py`
+- `tests/test_purchase_invoice_blueprint.py`
+
+### 🗃️ Migraciones
+
+- `6d5f1c8a2e71_add_company_settings_table_and_rate_precision.py`
+- `9c0d1f4a7b22_add_inventory_entry_date_and_purchase_history.py`
+- `b17f2c6d91aa_add_daily_sales_closures.py`
+
+### 📚 Documentación
+
+- Documento de release agregado en `docs/reportes/RELEASE_1.2.0.md`.
+- README actualizado con resumen de capacidades nuevas del sistema.
+
+### 📊 Estado de la Entrega
+
+- ✅ Módulo de empresa operativo
+- ✅ Sincronización BCV automatizable
+- ✅ Compras históricas por factura/proveedor
+- ✅ Cierres diarios con reconstrucción 60/40
+- ✅ Versión preparada para commit y publicación remota
+
 ## [1.1] - 2026-02-11
 
 ### 🐛 Correcciones

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Cierre Diario - Sistema de Inventario{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}"><i class="bi bi-house"></i> Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('daily_closures.index') }}">Cierres Diarios</a></li>
+        <li class="breadcrumb-item active">Registrar</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1><i class="bi bi-plus-circle"></i> Registrar Cierre Diario</h1>
+        <p class="text-muted mb-0">Por defecto se aplica la regla 60% facturado y 40% sin factura para reconstruir salidas estimadas.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Datos del cierre</h5></div>
+            <div class="card-body">
+                <form method="post" id="dailyClosureForm">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="closure_date" class="form-label">Fecha</label>
+                            <input type="date" class="form-control" id="closure_date" name="closure_date" required value="{{ form_data.get('closure_date', today) if form_data else today }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="total_sales_usd" class="form-label">Total ventas USD</label>
+                            <input type="number" step="0.0001" min="0" class="form-control" id="total_sales_usd" name="total_sales_usd" required value="{{ form_data.get('total_sales_usd', '') if form_data else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="invoiced_share" class="form-label">% facturado</label>
+                            <input type="number" step="0.0001" min="0" max="1" class="form-control" id="invoiced_share" name="invoiced_share" value="{{ form_data.get('invoiced_share', '0.6000') if form_data else '0.6000' }}">
+                            <small class="text-muted">Use 0.6000 para 60%</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="non_invoiced_share" class="form-label">% sin factura</label>
+                            <input type="number" step="0.0001" min="0" max="1" class="form-control" id="non_invoiced_share" name="non_invoiced_share" value="{{ form_data.get('non_invoiced_share', '0.4000') if form_data else '0.4000' }}">
+                            <small class="text-muted">Use 0.4000 para 40%</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="invoiced_sales_usd" class="form-label">Monto facturado USD</label>
+                            <input type="number" step="0.0001" min="0" class="form-control" id="invoiced_sales_usd" name="invoiced_sales_usd" value="{{ form_data.get('invoiced_sales_usd', '') if form_data else '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="non_invoiced_sales_usd" class="form-label">Monto sin factura USD</label>
+                            <input type="number" step="0.0001" min="0" class="form-control" id="non_invoiced_sales_usd" name="non_invoiced_sales_usd" value="{{ form_data.get('non_invoiced_sales_usd', '') if form_data else '' }}">
+                        </div>
+                        <div class="col-12">
+                            <label for="notes" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notes" name="notes" rows="4">{{ form_data.get('notes', '') if form_data else '' }}</textarea>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{{ url_for('daily_closures.index') }}" class="btn btn-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Registrar Cierre
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-header"><h5 class="mb-0">Vista previa 60/40</h5></div>
+            <div class="card-body">
+                <p class="text-muted">El sistema reconstruye salidas estimadas por producto usando el peso del inventario disponible al momento del cierre.</p>
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Facturado estimado</dt>
+                    <dd class="col-sm-6" id="previewInvoiced">0.0000</dd>
+                    <dt class="col-sm-6">Sin factura estimado</dt>
+                    <dd class="col-sm-6" id="previewNonInvoiced">0.0000</dd>
+                    <dt class="col-sm-6">Total</dt>
+                    <dd class="col-sm-6" id="previewTotal">0.0000</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    (function () {
+        const totalInput = document.getElementById('total_sales_usd');
+        const invoicedShareInput = document.getElementById('invoiced_share');
+        const nonInvoicedShareInput = document.getElementById('non_invoiced_share');
+        const invoicedAmountInput = document.getElementById('invoiced_sales_usd');
+        const nonInvoicedAmountInput = document.getElementById('non_invoiced_sales_usd');
+        const previewInvoiced = document.getElementById('previewInvoiced');
+        const previewNonInvoiced = document.getElementById('previewNonInvoiced');
+        const previewTotal = document.getElementById('previewTotal');
+
+        function toNumber(value) {
+            const parsed = Number.parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function syncPreview() {
+            const total = toNumber(totalInput.value);
+            const invoicedShare = toNumber(invoicedShareInput.value);
+            const nonInvoicedShare = toNumber(nonInvoicedShareInput.value);
+            const invoicedAmount = invoicedAmountInput.value ? toNumber(invoicedAmountInput.value) : total * invoicedShare;
+            const nonInvoicedAmount = nonInvoicedAmountInput.value ? toNumber(nonInvoicedAmountInput.value) : total * nonInvoicedShare;
+            previewInvoiced.textContent = invoicedAmount.toFixed(4);
+            previewNonInvoiced.textContent = nonInvoicedAmount.toFixed(4);
+            previewTotal.textContent = total.toFixed(4);
+        }
+
+        [totalInput, invoicedShareInput, nonInvoicedShareInput, invoicedAmountInput, nonInvoicedAmountInput].forEach(function (input) {
+            input.addEventListener('input', syncPreview);
+        });
+        syncPreview();
+    })();
+</script>
+{% endblock %}

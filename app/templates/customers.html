@@ -2,6 +2,15 @@
 
 {% block title %}Clientes - Sistema de Inventario{% endblock %}
 
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}"><i class="bi bi-house"></i> Inicio</a></li>
+        <li class="breadcrumb-item active">Clientes</li>
+    </ol>
+</nav>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">

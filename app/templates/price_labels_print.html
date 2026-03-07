@@ -140,7 +140,7 @@
                 <span>${{ '%.2f'|format(label.precio_dolares) }}</span>
                 <span>Factor: {{ '%.2f'|format(label.factor_ajuste) }}</span>
             </div>
-            <div class="company-name">Ferre-Exito</div>
+            <div class="company-name">{{ company_profile.company_name if company_profile is defined else 'Ferre-Exito' }}</div>
         </div>
         {% endfor %}
     </div>

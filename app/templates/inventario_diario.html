@@ -41,10 +41,11 @@
 
 <div class="card">
     <div class="card-header bg-primary text-white">
-        <h5 class="mb-0">EMPRESA: INVERSIONES FERRE-EXITO, C.A</h5>
-        <small>R.I.F. J31764195-7</small><br>
-        <small>DIRECCION: Calle Bolívar. Palo Negro, Municipio Libertador. Estado Aragua</small><br>
-        <small>TELEFONO: 0412-7434522</small><br>
+        <h5 class="mb-0">EMPRESA: {{ company.company_name }}</h5>
+        <small>R.I.F. {{ company.rif }}</small><br>
+        <small>DIRECCION: {{ company.fiscal_address }}</small><br>
+        <small>TELEFONO: {{ company.phone }}</small><br>
+        <small>CORREO: {{ company.email }}</small><br>
         <small class="mt-2 d-block">Período: {{ start_date.strftime('%d/%m/%Y') }} - {{ end_date.strftime('%d/%m/%Y') }}</small>
     </div>
     <div class="card-body p-0">

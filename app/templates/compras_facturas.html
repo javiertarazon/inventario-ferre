@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+
+{% block title %}Facturas de Compra - Sistema de Inventario{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}"><i class="bi bi-house"></i> Inicio</a></li>
+        <li class="breadcrumb-item active">Facturas de Compra</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-7">
+        <h1><i class="bi bi-receipt"></i> Facturas de Compra</h1>
+        <p class="text-muted mb-0">Historial de entradas por proveedor, factura y precio de compra.</p>
+    </div>
+    <div class="col-md-5 text-end">
+        <a href="{{ url_for('purchases.import_invoices') }}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-upload"></i> Importar Facturas
+        </a>
+        <a href="{{ url_for('purchases.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Nueva Factura
+        </a>
+    </div>
+</div>
+
+{% if facturas %}
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Factura</th>
+                        <th>Proveedor</th>
+                        <th>Líneas</th>
+                        <th>Subtotal USD</th>
+                        <th>Total USD</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for factura in facturas %}
+                    <tr>
+                        <td>{{ factura.invoice_date.strftime('%Y-%m-%d') }}</td>
+                        <td><strong>{{ factura.invoice_number }}</strong></td>
+                        <td>{{ factura.supplier.nombre }}</td>
+                        <td>{{ factura.items|length }}</td>
+                        <td>{{ '%.4f'|format(factura.subtotal_usd or 0) }}</td>
+                        <td>{{ '%.4f'|format(factura.total_usd or 0) }}</td>
+                        <td>
+                            <a href="{{ url_for('purchases.view', invoice_id=factura.id) }}" class="btn btn-sm btn-info">
+                                <i class="bi bi-eye"></i> Ver
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if pagination and pagination.pages > 1 %}
+<nav aria-label="Paginación de facturas" class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if pagination.has_prev %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('purchases.index', page=pagination.prev_num) }}">Anterior</a>
+        </li>
+        {% endif %}
+
+        {% for page_num in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+            <li class="page-item {% if page_num == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('purchases.index', page=page_num) }}">{{ page_num }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+            {% endif %}
+        {% endfor %}
+
+        {% if pagination.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('purchases.index', page=pagination.next_num) }}">Siguiente</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<div class="alert alert-info">
+    <i class="bi bi-info-circle"></i> No hay facturas de compra registradas todavía.
+</div>
+{% endif %}
+{% endblock %}

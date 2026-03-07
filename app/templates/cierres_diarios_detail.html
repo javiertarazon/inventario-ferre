@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block title %}Detalle Cierre Diario - Sistema de Inventario{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}"><i class="bi bi-house"></i> Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('daily_closures.index') }}">Cierres Diarios</a></li>
+        <li class="breadcrumb-item active">{{ cierre.closure_date.strftime('%Y-%m-%d') }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1><i class="bi bi-calendar-check"></i> Cierre {{ cierre.closure_date.strftime('%Y-%m-%d') }}</h1>
+        <p class="text-muted mb-0">Salidas reconstruidas con regla {{ ('%.2f'|format((cierre.invoiced_share or 0) * 100)) }}% / {{ ('%.2f'|format((cierre.non_invoiced_share or 0) * 100)) }}%.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('daily_closures.index') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-header"><h5 class="mb-0">Resumen</h5></div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-6">Total USD</dt>
+                    <dd class="col-sm-6">{{ '%.4f'|format(cierre.total_sales_usd or 0) }}</dd>
+                    <dt class="col-sm-6">Facturado USD</dt>
+                    <dd class="col-sm-6">{{ '%.4f'|format(cierre.invoiced_sales_usd or 0) }}</dd>
+                    <dt class="col-sm-6">Sin factura USD</dt>
+                    <dd class="col-sm-6">{{ '%.4f'|format(cierre.non_invoiced_sales_usd or 0) }}</dd>
+                    <dt class="col-sm-6">Reconstruido USD</dt>
+                    <dd class="col-sm-6">{{ '%.4f'|format(cierre.reconstructed_sales_usd or 0) }}</dd>
+                    <dt class="col-sm-6">Unidades salida</dt>
+                    <dd class="col-sm-6">{{ cierre.generated_exit_units }}</dd>
+                </dl>
+                {% if cierre.notes %}
+                <div class="alert alert-secondary mt-3 mb-0">
+                    <strong>Notas:</strong> {{ cierre.notes }}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header"><h5 class="mb-0">Asignaciones reconstruidas</h5></div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Descripción</th>
+                                <th>Precio ref. USD</th>
+                                <th>Venta asignada USD</th>
+                                <th>Cantidad estimada</th>
+                                <th>Movimiento</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for allocation in cierre.allocations %}
+                            <tr>
+                                <td>{{ allocation.product.codigo }}</td>
+                                <td>{{ allocation.product.descripcion }}</td>
+                                <td>{{ '%.4f'|format(allocation.reference_unit_price_usd or 0) }}</td>
+                                <td>{{ '%.4f'|format(allocation.allocated_sales_usd or 0) }}</td>
+                                <td>{{ allocation.estimated_quantity }}</td>
+                                <td>
+                                    {% if allocation.movement_id %}
+                                    <a href="{{ url_for('movements.view', movement_id=allocation.movement_id) }}">#{{ allocation.movement_id }}</a>
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

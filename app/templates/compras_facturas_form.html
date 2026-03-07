@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+
+{% block title %}Registrar Factura de Compra - Sistema de Inventario{% endblock %}
+
+{% block breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('main.dashboard') }}"><i class="bi bi-house"></i> Inicio</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('purchases.index') }}">Facturas de Compra</a></li>
+        <li class="breadcrumb-item active">Registrar</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h1><i class="bi bi-plus-circle"></i> Registrar Factura de Compra</h1>
+        <p class="text-muted mb-0">Cada factura crea historial por producto y movimientos de entrada en inventario.</p>
+    </div>
+</div>
+
+<form method="post" id="purchaseInvoiceForm">
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-header"><h5 class="mb-0">Encabezado</h5></div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="supplier_id" class="form-label">Proveedor</label>
+                        <select class="form-select" id="supplier_id" name="supplier_id" required>
+                            <option value="">Seleccione...</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}" {% if form_data and form_data.get('supplier_id') == supplier.id|string %}selected{% endif %}>
+                                {{ supplier.nombre }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="invoice_number" class="form-label">Número de factura</label>
+                        <input type="text" class="form-control" id="invoice_number" name="invoice_number" required
+                               value="{{ form_data.get('invoice_number', '') if form_data else '' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="invoice_date" class="form-label">Fecha</label>
+                        <input type="date" class="form-control" id="invoice_date" name="invoice_date" required
+                               value="{{ form_data.get('invoice_date', today) if form_data else today }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="currency_code" class="form-label">Moneda</label>
+                        <input type="text" class="form-control" id="currency_code" name="currency_code"
+                               value="{{ form_data.get('currency_code', 'USD') if form_data else 'USD' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notas</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4">{{ form_data.get('notes', '') if form_data else '' }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Líneas de productos</h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="addLineBtn">
+                        <i class="bi bi-plus-circle"></i> Agregar línea
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle" id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th style="min-width: 270px;">Producto</th>
+                                    <th style="width: 110px;">Cantidad</th>
+                                    <th style="width: 140px;">Precio USD</th>
+                                    <th style="width: 150px;">Subtotal USD</th>
+                                    <th style="width: 60px;"></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% set rows = line_items if line_items else [{}] %}
+                                {% for item in rows %}
+                                <tr class="item-row">
+                                    <td>
+                                        <select class="form-select" name="product_id" required>
+                                            <option value="">Seleccione...</option>
+                                            {% for product in products %}
+                                            <option value="{{ product.id }}" {% if item.get('product_id') == product.id|string %}selected{% endif %}>
+                                                {{ product.codigo }} - {{ product.descripcion }}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input type="number" min="1" class="form-control quantity-input" name="quantity" required
+                                               value="{{ item.get('quantity', '') }}">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.0001" min="0" class="form-control unit-price-input" name="unit_price_usd" required
+                                               value="{{ item.get('unit_price_usd', '') }}">
+                                    </td>
+                                    <td>
+                                        <input type="number" step="0.0001" min="0" class="form-control line-subtotal-input" name="line_subtotal_usd" required
+                                               value="{{ item.get('line_subtotal_usd', '') }}">
+                                    </td>
+                                    <td class="text-end">
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="row justify-content-end mt-4">
+                        <div class="col-md-5">
+                            <div class="mb-3">
+                                <label for="taxable_base_usd" class="form-label">Base imponible USD</label>
+                                <input type="number" step="0.0001" min="0" class="form-control" id="taxable_base_usd" name="taxable_base_usd"
+                                       value="{{ form_data.get('taxable_base_usd', '') if form_data else '' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="tax_amount_usd" class="form-label">IVA USD</label>
+                                <input type="number" step="0.0001" min="0" class="form-control" id="tax_amount_usd" name="tax_amount_usd"
+                                       value="{{ form_data.get('tax_amount_usd', '0.0000') if form_data else '0.0000' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label for="total_usd" class="form-label">Total USD</label>
+                                <input type="number" step="0.0001" min="0" class="form-control" id="total_usd" name="total_usd"
+                                       value="{{ form_data.get('total_usd', '') if form_data else '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <a href="{{ url_for('purchases.index') }}" class="btn btn-secondary">
+            <i class="bi bi-x-circle"></i> Cancelar
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Registrar Factura
+        </button>
+    </div>
+</form>
+
+<template id="itemRowTemplate">
+    <tr class="item-row">
+        <td>
+            <select class="form-select" name="product_id" required>
+                <option value="">Seleccione...</option>
+                {% for product in products %}
+                <option value="{{ product.id }}">{{ product.codigo }} - {{ product.descripcion }}</option>
+                {% endfor %}
+            </select>
+        </td>
+        <td>
+            <input type="number" min="1" class="form-control quantity-input" name="quantity" required>
+        </td>
+        <td>
+            <input type="number" step="0.0001" min="0" class="form-control unit-price-input" name="unit_price_usd" required>
+        </td>
+        <td>
+            <input type="number" step="0.0001" min="0" class="form-control line-subtotal-input" name="line_subtotal_usd" required>
+        </td>
+        <td class="text-end">
+            <button type="button" class="btn btn-sm btn-outline-danger remove-line-btn">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    (function () {
+        const tableBody = document.querySelector('#itemsTable tbody');
+        const rowTemplate = document.getElementById('itemRowTemplate');
+        const addLineBtn = document.getElementById('addLineBtn');
+        const taxableBaseInput = document.getElementById('taxable_base_usd');
+        const taxAmountInput = document.getElementById('tax_amount_usd');
+        const totalInput = document.getElementById('total_usd');
+
+        function toNumber(value) {
+            const parsed = Number.parseFloat(value);
+            return Number.isFinite(parsed) ? parsed : 0;
+        }
+
+        function syncRowSubtotal(row) {
+            const quantity = toNumber(row.querySelector('.quantity-input')?.value);
+            const unitPrice = toNumber(row.querySelector('.unit-price-input')?.value);
+            const subtotalInput = row.querySelector('.line-subtotal-input');
+            if (!subtotalInput) {
+                return;
+            }
+            subtotalInput.value = (quantity * unitPrice).toFixed(4);
+        }
+
+        function syncTotals() {
+            const subtotal = Array.from(tableBody.querySelectorAll('.line-subtotal-input'))
+                .reduce((sum, input) => sum + toNumber(input.value), 0);
+
+            if (!taxableBaseInput.value || document.activeElement !== taxableBaseInput) {
+                taxableBaseInput.value = subtotal.toFixed(4);
+            }
+
+            const taxableBase = toNumber(taxableBaseInput.value || subtotal);
+            const taxAmount = toNumber(taxAmountInput.value);
+            totalInput.value = (taxableBase + taxAmount).toFixed(4);
+        }
+
+        function bindRow(row) {
+            row.querySelector('.quantity-input')?.addEventListener('input', function () {
+                syncRowSubtotal(row);
+                syncTotals();
+            });
+            row.querySelector('.unit-price-input')?.addEventListener('input', function () {
+                syncRowSubtotal(row);
+                syncTotals();
+            });
+            row.querySelector('.line-subtotal-input')?.addEventListener('input', syncTotals);
+            row.querySelector('.remove-line-btn')?.addEventListener('click', function () {
+                if (tableBody.querySelectorAll('.item-row').length === 1) {
+                    row.querySelectorAll('input').forEach(function (input) { input.value = ''; });
+                    row.querySelector('select').value = '';
+                } else {
+                    row.remove();
+                }
+                syncTotals();
+            });
+        }
+
+        Array.from(tableBody.querySelectorAll('.item-row')).forEach(function (row) {
+            bindRow(row);
+            syncRowSubtotal(row);
+        });
+
+        addLineBtn.addEventListener('click', function () {
+            const fragment = rowTemplate.content.cloneNode(true);
+            const row = fragment.querySelector('.item-row');
+            tableBody.appendChild(fragment);
+            bindRow(tableBody.lastElementChild);
+        });
+
+        taxableBaseInput.addEventListener('input', syncTotals);
+        taxAmountInput.addEventListener('input', syncTotals);
+        syncTotals();
+    })();
+</script>
+{% endblock %}

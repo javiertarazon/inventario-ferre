@@ -12,6 +12,9 @@ from app.models.item_group import ItemGroup
 from app.models.customer import Customer
 from app.models.sales_order import SalesOrder, SalesOrderItem
 from app.models.exchange_rate import ExchangeRate
+from app.models.company_settings import CompanySettings
+from app.models.purchase_invoice import PurchaseInvoice, PurchaseInvoiceItem
+from app.models.daily_sales_closure import DailySalesClosure, DailySalesClosureAllocation
 
 # Aliases for English names
 Supplier = Proveedor
@@ -31,5 +34,10 @@ __all__ = [
     'SalesOrder',
     'SalesOrderItem',
     'ExchangeRate',
+    'CompanySettings',
+    'PurchaseInvoice',
+    'PurchaseInvoiceItem',
+    'DailySalesClosure',
+    'DailySalesClosureAllocation',
 ]
 

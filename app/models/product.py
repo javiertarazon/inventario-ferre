@@ -1,8 +1,11 @@
 """
 Enhanced Product model with audit fields and constraints.
 """
-from datetime import datetime
+from datetime import date, datetime
 from app.extensions import db
+
+
+DEFAULT_INVENTORY_ENTRY_DATE = date(2024, 8, 1)
 
 
 class Product(db.Model):
@@ -19,6 +22,7 @@ class Product(db.Model):
     stock = db.Column(db.Integer, default=0, nullable=False)
     precio_dolares = db.Column(db.Numeric(10, 2), default=0.0, nullable=False)
     factor_ajuste = db.Column(db.Numeric(5, 2), default=1.0, nullable=False)
+    inventory_entry_date = db.Column(db.Date, nullable=False, default=lambda: DEFAULT_INVENTORY_ENTRY_DATE)
     
     # Inventory management
     reorder_point = db.Column(db.Integer, default=10, nullable=False)  # Punto de reorden
@@ -38,6 +42,7 @@ class Product(db.Model):
     # Relationships
     proveedor = db.relationship('Proveedor', backref='products')
     movimientos = db.relationship('Movimiento', backref='producto', lazy='dynamic')
+    purchase_invoice_items = db.relationship('PurchaseInvoiceItem', back_populates='product', lazy='dynamic')
     
     # Constraints
     __table_args__ = (
@@ -86,6 +91,7 @@ class Product(db.Model):
             'precio_dolares': float(self.precio_dolares) if self.precio_dolares else 0.0,
             'factor_ajuste': float(self.factor_ajuste) if self.factor_ajuste else 1.0,
             'proveedor_id': self.proveedor_id,
+            'inventory_entry_date': self.inventory_entry_date.isoformat() if self.inventory_entry_date else None,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None

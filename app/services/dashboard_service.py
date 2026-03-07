@@ -6,7 +6,7 @@ from datetime import datetime, date, timedelta
 from flask import current_app
 from sqlalchemy import func
 
-from app.models import Product, SalesOrder, Customer, Movement
+from app.models import Product, SalesOrder, Customer, Movement, Proveedor, ItemGroup, ExchangeRate
 from app.extensions import db
 
 
@@ -27,6 +27,7 @@ class DashboardService:
         try:
             metrics = {
                 'inventory': self._get_inventory_metrics(),
+                'executive': self._get_executive_metrics(),
                 'sales': self._get_sales_metrics(),
                 'customers': self._get_customer_metrics(),
                 'alerts': self._get_alerts(),
@@ -45,6 +46,21 @@ class DashboardService:
                     'low_stock_count': 0,
                     'out_of_stock': 0,
                     'categories': 0
+                },
+                'executive': {
+                    'exchange_rate': 0.0,
+                    'overall': {
+                        'total_products': 0,
+                        'total_usd': 0.0,
+                        'total_bs': 0.0
+                    },
+                    'by_category': [],
+                    'by_provider': [],
+                    'stock_alert': {
+                        'total_products': 0,
+                        'total_usd': 0.0,
+                        'total_bs': 0.0
+                    }
                 },
                 'sales': {
                     'total_orders': 0,
@@ -65,6 +81,111 @@ class DashboardService:
                     'list': []
                 },
                 'recent_activity': []
+            }
+
+    def _get_executive_metrics(self) -> Dict[str, Any]:
+        """Get executive inventory summary for dashboard home."""
+        try:
+            rate_obj = ExchangeRate.get_current_rate()
+            exchange_rate = float(rate_obj.rate) if rate_obj else 0.0
+
+            usd_expr = Product.stock * Product.precio_dolares
+
+            total_products = Product.query.filter_by(deleted_at=None).count()
+            total_usd = db.session.query(func.coalesce(func.sum(usd_expr), 0)).filter(
+                Product.deleted_at == None
+            ).scalar() or 0
+            total_usd = float(total_usd)
+
+            by_category_rows = db.session.query(
+                ItemGroup.name.label('category_name'),
+                func.count(Product.id).label('total_products'),
+                func.coalesce(func.sum(usd_expr), 0).label('total_usd')
+            ).outerjoin(
+                ItemGroup,
+                Product.item_group_id == ItemGroup.id
+            ).filter(
+                Product.deleted_at == None
+            ).group_by(
+                ItemGroup.name
+            ).all()
+
+            by_category = []
+            for row in by_category_rows:
+                usd = float(row.total_usd or 0)
+                by_category.append({
+                    'name': row.category_name or 'Sin categoria',
+                    'total_products': int(row.total_products or 0),
+                    'total_usd': round(usd, 2),
+                    'total_bs': round(usd * exchange_rate, 2)
+                })
+            by_category.sort(key=lambda x: x['total_products'], reverse=True)
+
+            by_provider_rows = db.session.query(
+                Proveedor.nombre.label('provider_name'),
+                func.count(Product.id).label('total_products'),
+                func.coalesce(func.sum(usd_expr), 0).label('total_usd')
+            ).outerjoin(
+                Proveedor,
+                Product.proveedor_id == Proveedor.id
+            ).filter(
+                Product.deleted_at == None
+            ).group_by(
+                Proveedor.nombre
+            ).all()
+
+            by_provider = []
+            for row in by_provider_rows:
+                usd = float(row.total_usd or 0)
+                by_provider.append({
+                    'name': row.provider_name or 'Sin proveedor',
+                    'total_products': int(row.total_products or 0),
+                    'total_usd': round(usd, 2),
+                    'total_bs': round(usd * exchange_rate, 2)
+                })
+            by_provider.sort(key=lambda x: x['total_products'], reverse=True)
+
+            alert_products_count = Product.query.filter(
+                Product.deleted_at == None,
+                Product.stock <= Product.reorder_point
+            ).count()
+            alert_usd = db.session.query(func.coalesce(func.sum(usd_expr), 0)).filter(
+                Product.deleted_at == None,
+                Product.stock <= Product.reorder_point
+            ).scalar() or 0
+            alert_usd = float(alert_usd)
+
+            return {
+                'exchange_rate': round(exchange_rate, 2),
+                'overall': {
+                    'total_products': total_products,
+                    'total_usd': round(total_usd, 2),
+                    'total_bs': round(total_usd * exchange_rate, 2)
+                },
+                'by_category': by_category,
+                'by_provider': by_provider,
+                'stock_alert': {
+                    'total_products': alert_products_count,
+                    'total_usd': round(alert_usd, 2),
+                    'total_bs': round(alert_usd * exchange_rate, 2)
+                }
+            }
+        except Exception as e:
+            current_app.logger.error(f"Error getting executive metrics: {str(e)}")
+            return {
+                'exchange_rate': 0.0,
+                'overall': {
+                    'total_products': 0,
+                    'total_usd': 0.0,
+                    'total_bs': 0.0
+                },
+                'by_category': [],
+                'by_provider': [],
+                'stock_alert': {
+                    'total_products': 0,
+                    'total_usd': 0.0,
+                    'total_bs': 0.0
+                }
             }
     
     def _get_inventory_metrics(self) -> Dict[str, Any]:
@@ -262,6 +383,7 @@ class DashboardService:
                 'title': f'Movimiento: {movement.tipo}',
                 'description': f'{movement.producto.descripcion} - Cantidad: {movement.cantidad}',
                 'timestamp': movement.created_at.isoformat() if movement.created_at else None,
+                'timestamp_display': movement.created_at.strftime('%d/%m/%Y %H:%M') if movement.created_at else '-',
                 'timestamp_obj': movement.created_at,  # For sorting
                 'user': movement.creator.username if movement.creator else 'Sistema'
             })
@@ -278,6 +400,7 @@ class DashboardService:
                 'title': f'Orden: {order.order_number}',
                 'description': f'Cliente: {order.customer.name} - Total: ${order.total_amount}',
                 'timestamp': order.created_at.isoformat() if order.created_at else None,
+                'timestamp_display': order.created_at.strftime('%d/%m/%Y %H:%M') if order.created_at else '-',
                 'timestamp_obj': order.created_at,  # For sorting
                 'user': order.creator.username if order.creator else 'Sistema'
             })
