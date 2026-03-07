@@ -257,6 +257,34 @@
 - Plan ID: CLEANUP-ROOT-20260306
 - Status: ✅ COMPLETADA
 
+## Request Log (2026-03-07) - Release 1.2.0 y publicacion en repositorio local/remoto
+
+### Completed
+- [x] Actualizada la version correlativa del sistema a `1.2.0`
+- [x] Actualizada la documentacion de release
+  - `CHANGELOG.md`
+  - `README.md`
+  - `docs/README.md`
+  - `docs/reportes/RELEASE_1.2.0.md`
+- [x] Creado commit local de release
+  - Commit: `a34c305`
+  - Mensaje: `release: version 1.2.0`
+- [x] Creado tag anotado de version
+  - Tag: `v1.2.0`
+- [x] Publicados rama principal y tag en remoto `origin`
+
+### Pending
+- [ ] Decidir si `reports/` debe versionarse, archivarse o ignorarse en `.gitignore`
+- [ ] Decidir si `tmp_check_dashboard_route.py` debe conservarse, moverse a `scripts/` o eliminarse
+
+### Blockers
+- Ninguno tecnico bloqueante para la publicacion.
+
+### Evidence
+- `git push origin main` completado correctamente
+- `git push origin v1.2.0` completado correctamente
+- Estado posterior verificado: rama `main` sincronizada con `origin/main`
+
 ## Project Status Summary
 - **Fase 1** (Security): ✅ 100% COMPLETE - 7/7 validation checks
 - **Fase 2** (Code Quality): ✅ 87.5% COMPLETE - 63/72 type hints, 71/72 docstrings
