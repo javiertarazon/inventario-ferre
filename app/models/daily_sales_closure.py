@@ -47,6 +47,7 @@ class DailySalesClosureAllocation(db.Model):
     closure_id = db.Column(db.Integer, db.ForeignKey('daily_sales_closures.id'), nullable=False, index=True)
     product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False, index=True)
     movement_id = db.Column(db.Integer, db.ForeignKey('movimientos.id'), nullable=True, index=True)
+    allocation_group = db.Column(db.String(30), nullable=True)
     reference_unit_price_usd = db.Column(db.Numeric(12, 4), nullable=False)
     allocated_sales_usd = db.Column(db.Numeric(14, 4), nullable=False, default=0)
     estimated_quantity = db.Column(db.Integer, nullable=False)

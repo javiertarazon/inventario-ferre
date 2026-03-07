@@ -442,9 +442,12 @@ class ImportService:
     def _process_daily_closures_dataframe(self, df: pd.DataFrame, user_id: int, source_file_name: str) -> Dict[str, Any]:
         """Read daily closure rows and delegate estimated output generation."""
         date_col = self._find_column(df, ['fecha', 'fecha cierre', 'closure date'])
-        total_col = self._find_column(df, ['total usd', 'ventas usd', 'total', 'monto total'])
-        invoiced_amount_col = self._find_column(df, ['con factura', 'facturado', 'ventas facturadas'])
-        non_invoiced_amount_col = self._find_column(df, ['sin factura', 'no facturado', 'ventas no facturadas'])
+        total_bs_col = self._find_column(df, ['total bs', 'total bolivares', 'ventas bs', 'monto total bs', 'monto total'])
+        total_usd_col = self._find_column(df, ['total usd', 'ventas usd'])
+        invoiced_amount_bs_col = self._find_column(df, ['con factura bs', 'facturado bs', 'ventas facturadas bs', 'con factura', 'facturado'])
+        non_invoiced_amount_bs_col = self._find_column(df, ['sin factura bs', 'no facturado bs', 'ventas no facturadas bs', 'sin factura', 'no facturado'])
+        invoiced_amount_usd_col = self._find_column(df, ['con factura usd', 'facturado usd', 'ventas facturadas usd'])
+        non_invoiced_amount_usd_col = self._find_column(df, ['sin factura usd', 'no facturado usd', 'ventas no facturadas usd'])
         invoiced_share_col = self._find_column(df, ['porcentaje facturado', 'share factura'])
         non_invoiced_share_col = self._find_column(df, ['porcentaje no facturado', 'share no factura'])
         notes_col = self._find_column(df, ['observaciones', 'notas', 'notes'])
@@ -452,8 +455,10 @@ class ImportService:
         missing_fields = []
         if not date_col:
             missing_fields.append('Fecha')
-        if not total_col and not (invoiced_amount_col and non_invoiced_amount_col):
-            missing_fields.append('Total USD o columnas Con factura/Sin factura')
+        has_total = total_bs_col or total_usd_col
+        has_segments = (invoiced_amount_bs_col and non_invoiced_amount_bs_col) or (invoiced_amount_usd_col and non_invoiced_amount_usd_col)
+        if not has_total and not has_segments:
+            missing_fields.append('Total Bs/USD o columnas Con factura/Sin factura')
         if missing_fields:
             raise ValidationError('Faltan columnas requeridas para cierres diarios: ' + ', '.join(missing_fields))
 
@@ -467,16 +472,25 @@ class ImportService:
                 if not closure_date:
                     raise ValidationError('La fecha del cierre es requerida')
 
-                total_amount = None
-                if total_col and not pd.isna(row[total_col]):
-                    total_amount = self._parse_import_decimal(row[total_col], 'total usd')
+                total_amount_bs = None
+                total_amount_usd = None
+                if total_bs_col and not pd.isna(row[total_bs_col]):
+                    total_amount_bs = self._parse_import_decimal(row[total_bs_col], 'total bs')
+                if total_usd_col and not pd.isna(row[total_usd_col]):
+                    total_amount_usd = self._parse_import_decimal(row[total_usd_col], 'total usd')
 
-                invoiced_amount = None
-                non_invoiced_amount = None
-                if invoiced_amount_col and not pd.isna(row[invoiced_amount_col]):
-                    invoiced_amount = self._parse_import_decimal(row[invoiced_amount_col], 'con factura')
-                if non_invoiced_amount_col and not pd.isna(row[non_invoiced_amount_col]):
-                    non_invoiced_amount = self._parse_import_decimal(row[non_invoiced_amount_col], 'sin factura')
+                invoiced_amount_bs = None
+                non_invoiced_amount_bs = None
+                invoiced_amount_usd = None
+                non_invoiced_amount_usd = None
+                if invoiced_amount_bs_col and not pd.isna(row[invoiced_amount_bs_col]):
+                    invoiced_amount_bs = self._parse_import_decimal(row[invoiced_amount_bs_col], 'con factura bs')
+                if non_invoiced_amount_bs_col and not pd.isna(row[non_invoiced_amount_bs_col]):
+                    non_invoiced_amount_bs = self._parse_import_decimal(row[non_invoiced_amount_bs_col], 'sin factura bs')
+                if invoiced_amount_usd_col and not pd.isna(row[invoiced_amount_usd_col]):
+                    invoiced_amount_usd = self._parse_import_decimal(row[invoiced_amount_usd_col], 'con factura usd')
+                if non_invoiced_amount_usd_col and not pd.isna(row[non_invoiced_amount_usd_col]):
+                    non_invoiced_amount_usd = self._parse_import_decimal(row[non_invoiced_amount_usd_col], 'sin factura usd')
 
                 invoiced_share = None
                 non_invoiced_share = None
@@ -491,12 +505,18 @@ class ImportService:
                     'source_file_name': source_file_name,
                 }
 
-                if total_amount is not None:
-                    payload['total_sales_usd'] = total_amount
-                if invoiced_amount is not None:
-                    payload['invoiced_sales_usd'] = invoiced_amount
-                if non_invoiced_amount is not None:
-                    payload['non_invoiced_sales_usd'] = non_invoiced_amount
+                if total_amount_bs is not None:
+                    payload['total_sales_bs'] = total_amount_bs
+                if total_amount_usd is not None:
+                    payload['total_sales_usd'] = total_amount_usd
+                if invoiced_amount_bs is not None:
+                    payload['invoiced_sales_bs'] = invoiced_amount_bs
+                if non_invoiced_amount_bs is not None:
+                    payload['non_invoiced_sales_bs'] = non_invoiced_amount_bs
+                if invoiced_amount_usd is not None:
+                    payload['invoiced_sales_usd'] = invoiced_amount_usd
+                if non_invoiced_amount_usd is not None:
+                    payload['non_invoiced_sales_usd'] = non_invoiced_amount_usd
                 if invoiced_share is not None:
                     payload['invoiced_share'] = invoiced_share
                 if non_invoiced_share is not None:

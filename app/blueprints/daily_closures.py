@@ -4,6 +4,7 @@ from datetime import date
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user, login_required
 
+from app.models import ExchangeRate
 from app.services import DailySalesClosureService, ImportService
 from app.utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 
@@ -18,10 +19,19 @@ def index():
         page = request.args.get('page', 1, type=int)
         per_page = request.args.get('per_page', 20, type=int)
         pagination = DailySalesClosureService().list_closures(page=page, per_page=per_page)
-        return render_template('cierres_diarios.html', cierres=pagination.items, pagination=pagination)
+        exchange_rates = {
+            cierre.id: ExchangeRate.get_rate_for_date(cierre.closure_date)
+            for cierre in pagination.items
+        }
+        return render_template(
+            'cierres_diarios.html',
+            cierres=pagination.items,
+            pagination=pagination,
+            exchange_rates=exchange_rates,
+        )
     except Exception as e:
         flash(f'Error al cargar cierres diarios: {str(e)}', 'error')
-        return render_template('cierres_diarios.html', cierres=[], pagination=None)
+        return render_template('cierres_diarios.html', cierres=[], pagination=None, exchange_rates={})
 
 
 @daily_closures_bp.route('/create', methods=['GET', 'POST'])
@@ -34,11 +44,11 @@ def create():
     try:
         payload = {
             'closure_date': request.form.get('closure_date', '').strip(),
-            'total_sales_usd': request.form.get('total_sales_usd', '').strip() or None,
+            'total_sales_bs': request.form.get('total_sales_bs', '').strip() or None,
             'invoiced_share': request.form.get('invoiced_share', '').strip() or None,
             'non_invoiced_share': request.form.get('non_invoiced_share', '').strip() or None,
-            'invoiced_sales_usd': request.form.get('invoiced_sales_usd', '').strip() or None,
-            'non_invoiced_sales_usd': request.form.get('non_invoiced_sales_usd', '').strip() or None,
+            'invoiced_sales_bs': request.form.get('invoiced_sales_bs', '').strip() or None,
+            'non_invoiced_sales_bs': request.form.get('non_invoiced_sales_bs', '').strip() or None,
             'notes': request.form.get('notes', '').strip(),
         }
         closure = DailySalesClosureService().create_closure(payload, current_user.id)
@@ -81,7 +91,8 @@ def view(closure_id):
     """Show one closure with reconstructed allocations."""
     try:
         cierre = DailySalesClosureService().get_closure(closure_id)
-        return render_template('cierres_diarios_detail.html', cierre=cierre)
+        exchange_rate = ExchangeRate.get_rate_for_date(cierre.closure_date)
+        return render_template('cierres_diarios_detail.html', cierre=cierre, exchange_rate=exchange_rate)
     except NotFoundError:
         flash('Cierre diario no encontrado', 'error')
         return redirect(url_for('daily_closures.index'))

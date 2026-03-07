@@ -15,7 +15,7 @@
 <div class="row mb-4">
     <div class="col-md-8">
         <h1><i class="bi bi-calendar-check"></i> Cierres Diarios</h1>
-        <p class="text-muted mb-0">Reconstrucción estimada de salidas a partir del cierre de ventas del día.</p>
+        <p class="text-muted mb-0">Reconstrucción estimada de salidas a partir del cierre de ventas del día en bolívares, convertido con la tasa BCV de la fecha.</p>
     </div>
     <div class="col-md-4 text-end">
         <a href="{{ url_for('daily_closures.import_closures') }}" class="btn btn-outline-primary me-2">
@@ -35,9 +35,10 @@
                 <thead>
                     <tr>
                         <th>Fecha</th>
-                        <th>Total USD</th>
-                        <th>Facturado</th>
-                        <th>Sin factura</th>
+                        <th>Total Bs</th>
+                        <th>Tasa BCV</th>
+                        <th>Con factura USD</th>
+                        <th>Sin factura USD</th>
                         <th>Reconstruido USD</th>
                         <th>Unidades salida</th>
                         <th>Acciones</th>
@@ -47,7 +48,15 @@
                     {% for cierre in cierres %}
                     <tr>
                         <td><strong>{{ cierre.closure_date.strftime('%Y-%m-%d') }}</strong></td>
-                        <td>{{ '%.4f'|format(cierre.total_sales_usd or 0) }}</td>
+                        {% set tasa = exchange_rates.get(cierre.id) %}
+                        <td>
+                            {% if tasa %}
+                            {{ '%.4f'|format((cierre.total_sales_usd or 0) * tasa.rate) }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ '%.4f'|format(tasa.rate) if tasa else '-' }}</td>
                         <td>{{ '%.4f'|format(cierre.invoiced_sales_usd or 0) }}</td>
                         <td>{{ '%.4f'|format(cierre.non_invoiced_sales_usd or 0) }}</td>
                         <td>{{ '%.4f'|format(cierre.reconstructed_sales_usd or 0) }}</td>

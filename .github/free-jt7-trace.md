@@ -1,5 +1,146 @@
 # Free JT7 Traceability Log
 
+## Request Log (2026-03-07) - Unificacion de reportes de movimientos a formato SENIAT en Excel
+
+### Completed
+- [x] Ajustados los exportadores Excel de movimientos para salir en formato SENIAT basado en bolivares
+  - `movimientos/export`
+  - `libro-diario/export`
+  - `resumen-mensual/export`
+- [x] Alineada la maqueta visual de exportes de movimientos contra la plantilla de referencia `data/Inventario Ferre-Exito Seniat.xlsx`
+  - Encabezado de empresa, RIF, direccion y telefono en filas fijas
+  - Bloques visuales `Existencia Inicial`, `Entradas`, `Salidas`, `Autoconsumos` e `Inv. Actual`
+  - 17 columnas con anchos replicados desde la plantilla SENIAT usada por el usuario
+- [x] Eliminadas columnas USD de los archivos Excel exportados de movimientos
+  - Sin `Precio USD`
+  - Sin `Valor USD`
+  - Sin columnas mensuales en USD para apertura/cierre
+- [x] Corregida la valorizacion en Bs por tasa exacta de la fecha correspondiente
+  - Movimientos y libro diario usan tasa del dia del movimiento
+  - Resumen mensual usa tasa de apertura del primer dia y tasa de cierre del ultimo dia del mes
+- [x] Agregado encabezado tipo SENIAT para hojas Excel de movimientos
+  - Nombre de empresa
+  - RIF
+  - Titulo de reporte
+  - Periodo del reporte
+- [x] Agregadas pruebas automatizadas focalizadas
+  - `tests/test_reports_blueprint.py`
+  - Cobertura para `movimientos/export`, `libro-diario/export` y `resumen-mensual/export`
+- [x] Verificacion ejecutada
+  - Resultado: `6 passed` en `tests/test_reports_blueprint.py`
+  - Validada la nueva estructura visual de encabezados y bloques SENIAT en workbook generado
+
+### Pending
+- [ ] Validacion manual del usuario exportando nuevamente sus archivos reales y comparando contra el ejemplo SENIAT
+- [ ] Afinar detalles cosmeticos finales si el usuario detecta diferencias menores de texto, ancho o espaciado frente a su plantilla operativa exacta
+
+### Blockers
+- Ninguno tecnico bloqueante para esta fase.
+
+### Evidence
+- Servicio ajustado en `app/services/reports_service.py`
+- Exportadores ajustados en `app/blueprints/reports.py`
+- Validacion automatizada del workbook generado en `tests/test_reports_blueprint.py`
+- Plantilla de referencia inspeccionada en `data/Inventario Ferre-Exito Seniat.xlsx`
+
+## Request Log (2026-03-07) - Ajuste de formato SENIAT en exportacion Excel del libro inventario
+
+### Completed
+- [x] Ajustado el Excel exportado del libro inventario para no incluir la columna `Precio USD`
+  - El cambio aplica solo al archivo `.xlsx`
+  - La vista web en PC mantiene la columna en dolares sin cambios
+- [x] Agregada prueba automatizada del formato exportado
+  - `tests/test_reports_blueprint.py`
+  - Valida que el encabezado del Excel no contenga `Precio USD`
+- [x] Verificacion ejecutada
+  - Resultado: `3 passed` en `tests/test_reports_blueprint.py`
+
+### Pending
+- [ ] Validar manualmente con el usuario si desea alinear mas columnas del Excel al ejemplo SENIAT provisto
+
+### Blockers
+- Ninguno tecnico bloqueante para esta fase.
+
+### Evidence
+- Exportador ajustado en `app/blueprints/reports.py`
+- Formato validado contra workbook generado en prueba automatizada
+
+## Request Log (2026-03-07) - Ejecucion de migracion, validacion funcional de cierres y reporte SENIAT operativo
+
+### Completed
+- [x] Corregido el desfase entre historial Alembic y esquema real en desarrollo
+  - La base tenia `daily_sales_closures` creada pero `alembic_version` seguia en `9c0d1f4a7b22`
+  - Se alineo el historial y se aplico la revision `d4a8f6b2c913`
+- [x] Aplicada la migracion nueva en la base de desarrollo
+  - Evidencia verificada: `alembic = d4a8f6b2c913`
+  - Evidencia verificada: `allocation_group` existe en `daily_sales_closure_allocations`
+- [x] Validado funcionalmente el flujo web de cierres diarios
+  - Prueba HTTP del POST a `/daily-closures/create`
+  - Verificado detalle con tasa BCV, total Bs y grupos `con factura` / `sin factura`
+- [x] Implementado reporte SENIAT operativo basado en compras y cierres
+  - Consolidado de compras por factura con conversion a Bs por tasa exacta o `exchange_rate_value`
+  - Consolidado de cierres diarios con montos Bs del periodo
+  - Exportacion Excel con hojas `Compras`, `Cierres` y `Resumen`
+- [x] Agregadas pruebas automatizadas focalizadas para esta fase
+  - `tests/test_daily_closures_blueprint.py`
+  - `tests/test_reports_blueprint.py`
+- [x] Verificacion ejecutada
+  - Resultado: `5 passed` en pruebas objetivo
+  - Evidencia de DB: revision Alembic confirmada y columna nueva presente
+
+### Pending
+- [ ] Validacion manual en navegador con datos reales del negocio para cierres y reporte SENIAT
+- [ ] Expandir el reporte SENIAT operativo si se requieren columnas o reglas fiscales adicionales
+- [ ] Evaluar limpieza futura de warnings por `datetime.utcnow()` deprecado
+
+### Blockers
+- Ninguno tecnico bloqueante para esta fase.
+
+### Evidence
+- Reporte operativo implementado en `app/services/reports_service.py` y `app/blueprints/reports.py`
+- Vista nueva en `app/templates/reports/seniat_operativo.html`
+- Tarjeta de acceso agregada en `app/templates/reports/index.html`
+- Validacion funcional de cierres en `tests/test_daily_closures_blueprint.py`
+- Validacion HTML y export Excel en `tests/test_reports_blueprint.py`
+
+## Request Log (2026-03-07) - Ajuste operativo de cierres diarios por Bs y regla 60/40 real
+
+### Completed
+- [x] Corregido el servicio de cierres diarios para aceptar montos en bolívares
+  - Conversión Bs a USD con tasa BCV exacta de la fecha del cierre
+  - Error de validación si no existe tasa para la fecha exacta
+- [x] Ajustada la reconstrucción 60/40 por trazabilidad real de compras
+  - 60% artículos con historial de entrada por factura
+  - 40% artículos sin historial de entrada por factura
+- [x] Actualizada la UI de cierres diarios
+  - Formulario en Bs con texto de ayuda alineado al negocio
+  - Listado con total Bs y tasa BCV por fecha
+  - Detalle con tasa BCV, total Bs y grupo de asignación
+- [x] Persistido el grupo de asignación reconstruida
+  - Nuevo campo `allocation_group` en `DailySalesClosureAllocation`
+  - Migración nueva `d4a8f6b2c913_add_allocation_group_to_daily_sales_closure_allocations.py`
+- [x] Agregadas pruebas automatizadas focalizadas
+  - `tests/test_daily_sales_closure_service.py`
+  - Caso de tasa exacta obligatoria por fecha
+  - Caso de separación con/sin historial de factura
+- [x] Verificación ejecutada
+  - Resultado: `2 passed` en pruebas objetivo
+  - Archivos modificados sin errores estáticos reportados
+
+### Pending
+- [ ] Validación funcional manual en navegador del flujo completo de cierres diarios con datos reales
+- [ ] Afinar reportes fiscales tipo SENIAT para consumir compras por factura y cierres ajustados
+- [ ] Evaluar si se desea migrar el uso extendido de `datetime.utcnow()` por objetos UTC aware
+
+### Blockers
+- Ninguno técnico bloqueante para esta fase.
+
+### Evidence
+- Servicio ajustado en `app/services/daily_sales_closure_service.py`
+- UI actualizada en `app/templates/cierres_diarios_form.html`, `app/templates/cierres_diarios.html` y `app/templates/cierres_diarios_detail.html`
+- Soporte de importación Bs/USD ya conectado en `app/services/import_service.py`
+- Migración agregada para persistir `allocation_group`
+
 ## Request Log (2026-03-07) - Configuracion de empresa y automatizacion diaria BCV
 
 ### Completed

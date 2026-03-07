@@ -2,6 +2,47 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+## [1.4.0] - 2026-03-07
+
+### ✨ Nuevas Funcionalidades
+
+- **Alineación visual exacta de reportes Excel al formato SENIAT**
+  - Implementación de escritor Excel con layout visual replicado desde plantilla de referencia `data/Inventario Ferre-Exito Seniat.xlsx`.
+  - Encabezado fijo: empresa, RIF, dirección fiscal, teléfono, título y período.
+  - Bloques visuales: Existencia Inicial, Entradas, Salidas, Autoconsumos e Inventario Actual.
+  - 17 columnas por bloque: Código, Descripción, Costo Unitario, Cantidad, Monto (replicados para cada bloque).
+  - Anchos de columna exactos replicados desde plantilla SENIAT operativa.
+  - Aplicado a reportes: Movimientos, Libro Diario (Asientos + Resumen), Resumen Mensual.
+
+- **Mejoras de cálculo contable por valorización en Bs**
+  - Servicio de reportes ampliado para exponer montos en Bs por cada bloque (entradas_bs, salidas_bs, autoconsumos_bs).
+  - Apoyo a autoconsumos como categoría diferenciada en salidas.
+  - Respaldo con costo de apertura en resumen mensual cuando no existe tasa exacta para fondos intermedios.
+
+### 🐛 Correcciones
+
+- **Reportes de movimientos sin columnas USD**
+  - Eliminadas todas las columnas USD de los exportes Excel.
+  - Valuación única en bolivares con tasa exacta de la fecha del movimiento o período.
+
+- **Mejora de precisión numérica**
+  - Redondeado correcto de todos los montos Bs a 2 decimales.
+  - Validación de cantidades como enteros, montos como decimales.
+
+### 🧪 Tests Agregados o Actualizados
+
+- `tests/test_reports_blueprint.py`
+  - Validación del nueva estructura visual SENIAT de 17 columnas.
+  - Verificación de headers y bloques visuales en workbook generado.
+  - Pruebas de tasas diarias exactas en movimientos y tasas de período en resumen mensual.
+  - Validación de respaldo con costo de apertura en resumen mensual.
+  - Estado final: 6 passed.
+
+### 📚 Documentación
+
+- [.github/free-jt7-trace.md](.github/free-jt7-trace.md) actualizado con evidencia de alineación visual SENIAT.
+- Plantilla de referencia documentada y utilizada como base de comparación.
+
 ## [1.3.0] - 2026-03-07
 
 ### ✨ Nuevas Funcionalidades

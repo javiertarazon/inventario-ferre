@@ -10,7 +10,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import selectinload
 
 from app.extensions import db
-from app.models import DailySalesClosure, DailySalesClosureAllocation, Movimiento, Product
+from app.models import DailySalesClosure, DailySalesClosureAllocation, ExchangeRate, Movimiento, Product
 from app.utils.exceptions import BusinessLogicError, NotFoundError, ValidationError
 
 
@@ -56,17 +56,33 @@ class DailySalesClosureService:
                 field='closure_date',
             )
 
+        total_sales_bs = self._parse_decimal(data.get('total_sales_bs'), 'total_sales_bs', required=False)
+        invoiced_sales_bs = self._parse_decimal(data.get('invoiced_sales_bs'), 'invoiced_sales_bs', required=False)
+        non_invoiced_sales_bs = self._parse_decimal(data.get('non_invoiced_sales_bs'), 'non_invoiced_sales_bs', required=False)
         total_sales_usd = self._parse_decimal(data.get('total_sales_usd'), 'total_sales_usd', required=False)
         invoiced_sales_usd = self._parse_decimal(data.get('invoiced_sales_usd'), 'invoiced_sales_usd', required=False)
         non_invoiced_sales_usd = self._parse_decimal(data.get('non_invoiced_sales_usd'), 'non_invoiced_sales_usd', required=False)
         invoiced_share = self._parse_share(data.get('invoiced_share'), default=self.DEFAULT_INVOICED_SHARE)
         non_invoiced_share = self._parse_share(data.get('non_invoiced_share'), default=self.DEFAULT_NON_INVOICED_SHARE)
 
+        exchange_rate = None
+        if any(value is not None for value in (total_sales_bs, invoiced_sales_bs, non_invoiced_sales_bs)):
+            exchange_rate = ExchangeRate.get_rate_for_date(closure_date)
+            if exchange_rate is None:
+                raise ValidationError(
+                    f'No existe tasa BCV registrada para la fecha {closure_date.isoformat()}',
+                    field='closure_date',
+                )
+            rate_value = Decimal(str(exchange_rate.rate))
+            total_sales_usd = self._resolve_usd_amount(total_sales_bs, total_sales_usd, rate_value)
+            invoiced_sales_usd = self._resolve_usd_amount(invoiced_sales_bs, invoiced_sales_usd, rate_value)
+            non_invoiced_sales_usd = self._resolve_usd_amount(non_invoiced_sales_bs, non_invoiced_sales_usd, rate_value)
+
         if total_sales_usd is None:
             if invoiced_sales_usd is None or non_invoiced_sales_usd is None:
                 raise ValidationError(
                     'Debe indicar el total del cierre o ambos montos con factura y sin factura',
-                    field='total_sales_usd',
+                    field='total_sales_bs',
                 )
             total_sales_usd = (invoiced_sales_usd + non_invoiced_sales_usd).quantize(Decimal('0.0001'))
 
@@ -82,8 +98,12 @@ class DailySalesClosureService:
         if non_invoiced_sales_usd is None:
             non_invoiced_sales_usd = (total_sales_usd - invoiced_sales_usd).quantize(Decimal('0.0001'))
 
-        candidate_products = self._get_candidate_products()
-        allocations = self._estimate_allocations(candidate_products, total_sales_usd)
+        invoiced_products = self._get_candidate_products(with_invoice_history=True)
+        non_invoiced_products = self._get_candidate_products(with_invoice_history=False)
+
+        allocations = []
+        allocations.extend(self._estimate_allocations(invoiced_products, invoiced_sales_usd, 'con factura'))
+        allocations.extend(self._estimate_allocations(non_invoiced_products, non_invoiced_sales_usd, 'sin factura'))
         if not allocations:
             raise BusinessLogicError('No se pudo reconstruir salidas: no hay inventario disponible para asignar')
 
@@ -116,6 +136,7 @@ class DailySalesClosureService:
                 quantity = allocation['quantity']
                 unit_price = allocation['unit_price']
                 allocated_sales = allocation['allocated_sales']
+                allocation_group = allocation['allocation_group']
 
                 movement = Movimiento(
                     producto_id=product.id,
@@ -124,7 +145,8 @@ class DailySalesClosureService:
                     fecha=closure_date,
                     descripcion=(
                         f'Cierre diario {closure_date.isoformat()} reconstruido 60/40 '
-                        f'(facturado {invoiced_share * 100:.0f}% / sin factura {non_invoiced_share * 100:.0f}%)'
+                        f'[{allocation_group}] '
+                        f'(articulos con factura {invoiced_share * 100:.0f}% / sin factura {non_invoiced_share * 100:.0f}%)'
                     ),
                     created_by=user_id,
                     updated_by=user_id,
@@ -138,6 +160,7 @@ class DailySalesClosureService:
                     closure_id=closure.id,
                     product_id=product.id,
                     movement_id=movement.id,
+                    allocation_group=allocation_group,
                     reference_unit_price_usd=unit_price,
                     allocated_sales_usd=allocated_sales,
                     estimated_quantity=quantity,
@@ -168,17 +191,25 @@ class DailySalesClosureService:
             current_app.logger.error('Database error creating daily closure: %s', str(exc))
             raise BusinessLogicError(f'Error al registrar el cierre diario: {exc}') from exc
 
-    def _get_candidate_products(self) -> List[Product]:
-        """Return active products with positive stock available for reconstruction."""
-        return (
-            Product.query
-            .filter(Product.deleted_at.is_(None), Product.stock > 0)
-            .order_by(Product.stock.desc(), Product.codigo.asc())
-            .all()
-        )
+    def _get_candidate_products(self, with_invoice_history: bool) -> List[Product]:
+        """Return active products with stock, split by whether they have purchase invoice history."""
+        query = Product.query.filter(Product.deleted_at.is_(None), Product.stock > 0)
+        if with_invoice_history:
+            query = query.filter(Product.purchase_invoice_items.any())
+        else:
+            query = query.filter(~Product.purchase_invoice_items.any())
+        return query.order_by(Product.stock.desc(), Product.codigo.asc()).all()
 
-    def _estimate_allocations(self, products: List[Product], total_sales_usd: Decimal) -> List[Dict[str, Any]]:
-        """Estimate product outputs weighted by current inventory value."""
+    def _estimate_allocations(
+        self,
+        products: List[Product],
+        total_sales_usd: Decimal,
+        allocation_group: str,
+    ) -> List[Dict[str, Any]]:
+        """Estimate product outputs weighted by current inventory value within one allocation group."""
+        if total_sales_usd <= Decimal('0.0000'):
+            return []
+
         weighted_rows = []
         for product in products:
             unit_price = self._get_reference_unit_price(product)
@@ -196,7 +227,9 @@ class DailySalesClosureService:
             })
 
         if not weighted_rows:
-            return []
+            raise BusinessLogicError(
+                f'No hay inventario disponible en el grupo {allocation_group} para reconstruir el cierre'
+            )
 
         total_weight = sum((row['weight'] for row in weighted_rows), Decimal('0.0000'))
         if total_weight <= 0:
@@ -204,10 +237,13 @@ class DailySalesClosureService:
             for row in weighted_rows:
                 row['weight'] = Decimal(row['stock'])
 
-        allocatable_sales = min(
-            total_sales_usd,
-            sum((Decimal(row['stock']) * row['unit_price'] for row in weighted_rows), Decimal('0.0000')),
-        ).quantize(Decimal('0.0001'))
+        max_allocatable_sales = sum((Decimal(row['stock']) * row['unit_price'] for row in weighted_rows), Decimal('0.0000')).quantize(Decimal('0.0001'))
+        if max_allocatable_sales < total_sales_usd:
+            raise BusinessLogicError(
+                f'El grupo {allocation_group} no tiene inventario suficiente para cubrir el monto solicitado del cierre'
+            )
+
+        allocatable_sales = total_sales_usd.quantize(Decimal('0.0001'))
 
         for row in weighted_rows:
             proportional_sales = (allocatable_sales * row['weight'] / total_weight).quantize(Decimal('0.0001'))
@@ -245,10 +281,24 @@ class DailySalesClosureService:
                 'quantity': row['allocated_quantity'],
                 'allocated_sales': row['allocated_sales'],
                 'weight': row['weight'],
+                'allocation_group': allocation_group,
             }
             for row in weighted_rows
             if row['allocated_quantity'] > 0
         ]
+
+    def _resolve_usd_amount(
+        self,
+        amount_bs: Decimal | None,
+        amount_usd: Decimal | None,
+        exchange_rate_value: Decimal,
+    ) -> Decimal | None:
+        """Resolve a USD amount preferring bolivar input converted with the exchange rate of the closure date."""
+        if amount_bs is not None:
+            if exchange_rate_value <= 0:
+                raise ValidationError('La tasa BCV debe ser mayor que cero para convertir bolívares a USD', field='closure_date')
+            return (amount_bs / exchange_rate_value).quantize(Decimal('0.0001'))
+        return amount_usd
 
     def _get_reference_unit_price(self, product: Product) -> Decimal:
         """Resolve unit price for estimated exits, falling back to a minimal value."""

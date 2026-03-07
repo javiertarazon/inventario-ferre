@@ -16,7 +16,7 @@
 <div class="row mb-4">
     <div class="col-md-12">
         <h1><i class="bi bi-plus-circle"></i> Registrar Cierre Diario</h1>
-        <p class="text-muted mb-0">Por defecto se aplica la regla 60% facturado y 40% sin factura para reconstruir salidas estimadas.</p>
+        <p class="text-muted mb-0">Por defecto se aplica la regla 60% artículos con factura y 40% artículos sin factura para reconstruir salidas estimadas.</p>
     </div>
 </div>
 
@@ -32,26 +32,27 @@
                             <input type="date" class="form-control" id="closure_date" name="closure_date" required value="{{ form_data.get('closure_date', today) if form_data else today }}">
                         </div>
                         <div class="col-md-6">
-                            <label for="total_sales_usd" class="form-label">Total ventas USD</label>
-                            <input type="number" step="0.0001" min="0" class="form-control" id="total_sales_usd" name="total_sales_usd" required value="{{ form_data.get('total_sales_usd', '') if form_data else '' }}">
+                            <label for="total_sales_bs" class="form-label">Total ventas Bs</label>
+                            <input type="number" step="0.0001" min="0" class="form-control" id="total_sales_bs" name="total_sales_bs" required value="{{ form_data.get('total_sales_bs', '') if form_data else '' }}">
+                            <small class="text-muted">El sistema convierte a USD con la tasa BCV registrada para la fecha del cierre.</small>
                         </div>
                         <div class="col-md-6">
-                            <label for="invoiced_share" class="form-label">% facturado</label>
+                            <label for="invoiced_share" class="form-label">% artículos con factura</label>
                             <input type="number" step="0.0001" min="0" max="1" class="form-control" id="invoiced_share" name="invoiced_share" value="{{ form_data.get('invoiced_share', '0.6000') if form_data else '0.6000' }}">
                             <small class="text-muted">Use 0.6000 para 60%</small>
                         </div>
                         <div class="col-md-6">
-                            <label for="non_invoiced_share" class="form-label">% sin factura</label>
+                            <label for="non_invoiced_share" class="form-label">% artículos sin factura</label>
                             <input type="number" step="0.0001" min="0" max="1" class="form-control" id="non_invoiced_share" name="non_invoiced_share" value="{{ form_data.get('non_invoiced_share', '0.4000') if form_data else '0.4000' }}">
                             <small class="text-muted">Use 0.4000 para 40%</small>
                         </div>
                         <div class="col-md-6">
-                            <label for="invoiced_sales_usd" class="form-label">Monto facturado USD</label>
-                            <input type="number" step="0.0001" min="0" class="form-control" id="invoiced_sales_usd" name="invoiced_sales_usd" value="{{ form_data.get('invoiced_sales_usd', '') if form_data else '' }}">
+                            <label for="invoiced_sales_bs" class="form-label">Monto artículos con factura Bs</label>
+                            <input type="number" step="0.0001" min="0" class="form-control" id="invoiced_sales_bs" name="invoiced_sales_bs" value="{{ form_data.get('invoiced_sales_bs', '') if form_data else '' }}">
                         </div>
                         <div class="col-md-6">
-                            <label for="non_invoiced_sales_usd" class="form-label">Monto sin factura USD</label>
-                            <input type="number" step="0.0001" min="0" class="form-control" id="non_invoiced_sales_usd" name="non_invoiced_sales_usd" value="{{ form_data.get('non_invoiced_sales_usd', '') if form_data else '' }}">
+                            <label for="non_invoiced_sales_bs" class="form-label">Monto artículos sin factura Bs</label>
+                            <input type="number" step="0.0001" min="0" class="form-control" id="non_invoiced_sales_bs" name="non_invoiced_sales_bs" value="{{ form_data.get('non_invoiced_sales_bs', '') if form_data else '' }}">
                         </div>
                         <div class="col-12">
                             <label for="notes" class="form-label">Notas</label>
@@ -73,13 +74,13 @@
         <div class="card h-100">
             <div class="card-header"><h5 class="mb-0">Vista previa 60/40</h5></div>
             <div class="card-body">
-                <p class="text-muted">El sistema reconstruye salidas estimadas por producto usando el peso del inventario disponible al momento del cierre.</p>
+                <p class="text-muted">El sistema reconstruye salidas estimadas por producto usando el peso del inventario disponible al momento del cierre, separando artículos con entradas por factura y artículos sin entradas por factura.</p>
                 <dl class="row mb-0">
-                    <dt class="col-sm-6">Facturado estimado</dt>
+                    <dt class="col-sm-6">Con factura estimado</dt>
                     <dd class="col-sm-6" id="previewInvoiced">0.0000</dd>
                     <dt class="col-sm-6">Sin factura estimado</dt>
                     <dd class="col-sm-6" id="previewNonInvoiced">0.0000</dd>
-                    <dt class="col-sm-6">Total</dt>
+                    <dt class="col-sm-6">Total Bs</dt>
                     <dd class="col-sm-6" id="previewTotal">0.0000</dd>
                 </dl>
             </div>
@@ -92,11 +93,11 @@
 {{ super() }}
 <script>
     (function () {
-        const totalInput = document.getElementById('total_sales_usd');
+        const totalInput = document.getElementById('total_sales_bs');
         const invoicedShareInput = document.getElementById('invoiced_share');
         const nonInvoicedShareInput = document.getElementById('non_invoiced_share');
-        const invoicedAmountInput = document.getElementById('invoiced_sales_usd');
-        const nonInvoicedAmountInput = document.getElementById('non_invoiced_sales_usd');
+        const invoicedAmountInput = document.getElementById('invoiced_sales_bs');
+        const nonInvoicedAmountInput = document.getElementById('non_invoiced_sales_bs');
         const previewInvoiced = document.getElementById('previewInvoiced');
         const previewNonInvoiced = document.getElementById('previewNonInvoiced');
         const previewTotal = document.getElementById('previewTotal');

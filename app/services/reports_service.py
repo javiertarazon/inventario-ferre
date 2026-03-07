@@ -3,10 +3,21 @@ Reports Service - Business logic for generating inventory and sales reports.
 """
 from typing import Dict, Any, List, Optional
 from datetime import datetime, date, timedelta
+from collections import defaultdict
 from flask import current_app
 from sqlalchemy import func, and_
 
-from app.models import Product, Movimiento, SalesOrder, SalesOrderItem, Proveedor, ItemGroup, ExchangeRate
+from app.models import (
+    Product,
+    Movimiento,
+    SalesOrder,
+    SalesOrderItem,
+    Proveedor,
+    ItemGroup,
+    ExchangeRate,
+    PurchaseInvoice,
+    DailySalesClosure,
+)
 from app.extensions import db
 from app.services.company_settings_service import CompanySettingsService
 
@@ -132,6 +143,12 @@ class ReportsService:
 
             rows = []
             for m in movimientos:
+                fecha_mov = m.fecha.date() if isinstance(m.fecha, datetime) else m.fecha
+                precio_usd = 0.0
+                if m.producto:
+                    precio_usd = float(m.producto.precio_dolares or 0) * float(m.producto.factor_ajuste or 1)
+                tasa_bs = self._get_rate_for_date(fecha_mov)
+                stock_actual = m.producto.stock if m.producto else 0
                 rows.append({
                     'id': m.id,
                     'fecha': m.fecha,
@@ -139,8 +156,15 @@ class ReportsService:
                     'cantidad': m.cantidad,
                     'producto_codigo': m.producto.codigo if m.producto else '',
                     'producto_descripcion': m.producto.descripcion if m.producto else '',
+                    'producto_categoria': m.producto.item_group.name if m.producto and m.producto.item_group else '',
+                    'producto_proveedor': m.producto.proveedor.nombre if m.producto and m.producto.proveedor else '',
                     'descripcion': m.descripcion or '',
                     'usuario': m.creator.username if m.creator else 'Sistema',
+                    'tasa_bs': round(tasa_bs, 4),
+                    'precio_bs': round(precio_usd * tasa_bs, 2),
+                    'valor_bs': round(m.cantidad * precio_usd * tasa_bs, 2),
+                    'stock_actual': stock_actual,
+                    'valor_actual_bs': round(stock_actual * precio_usd * tasa_bs, 2),
                 })
             return rows
         except Exception as e:
@@ -398,6 +422,23 @@ class ReportsService:
         except Exception:
             return 1.0
 
+    def _get_rate_for_date(self, target_date: date, fallback_value: Any = None) -> float:
+        """Return exchange rate for one date, with optional persisted fallback value."""
+        try:
+            rate = ExchangeRate.get_rate_for_date(target_date)
+            if rate:
+                return float(rate.rate)
+        except Exception:
+            pass
+
+        try:
+            if fallback_value not in (None, ''):
+                return float(fallback_value)
+        except Exception:
+            pass
+
+        return 0.0
+
     def _get_company_profile(self) -> Dict[str, Any]:
         """Return persisted company profile with fallback defaults."""
         try:
@@ -410,6 +451,117 @@ class ReportsService:
         end_date = date.today()
         start_date = end_date - timedelta(days=days)
         return start_date, end_date
+
+    def get_reporte_seniat_operativo(self, start_date: date, end_date: date) -> Dict[str, Any]:
+        """Return purchases by invoice and daily closures for an operational SENIAT report."""
+        try:
+            company = self._get_company_profile()
+
+            purchase_invoices = (
+                PurchaseInvoice.query
+                .filter(
+                    PurchaseInvoice.deleted_at == None,
+                    PurchaseInvoice.invoice_date >= start_date,
+                    PurchaseInvoice.invoice_date <= end_date,
+                )
+                .order_by(PurchaseInvoice.invoice_date.asc(), PurchaseInvoice.id.asc())
+                .all()
+            )
+
+            daily_closures = (
+                DailySalesClosure.query
+                .filter(
+                    DailySalesClosure.deleted_at == None,
+                    DailySalesClosure.closure_date >= start_date,
+                    DailySalesClosure.closure_date <= end_date,
+                )
+                .order_by(DailySalesClosure.closure_date.asc(), DailySalesClosure.id.asc())
+                .all()
+            )
+
+            compras = []
+            for invoice in purchase_invoices:
+                rate_value = self._get_rate_for_date(invoice.invoice_date, invoice.exchange_rate_value)
+                total_usd = round(float(invoice.total_usd or 0), 4)
+                base_usd = round(float(invoice.taxable_base_usd or 0), 4)
+                impuesto_usd = round(float(invoice.tax_amount_usd or 0), 4)
+
+                compras.append({
+                    'fecha': invoice.invoice_date,
+                    'documento': invoice.invoice_number,
+                    'proveedor': invoice.supplier.nombre if invoice.supplier else '',
+                    'moneda': invoice.currency_code or 'USD',
+                    'tasa': round(rate_value, 4) if rate_value else 0.0,
+                    'base_usd': base_usd,
+                    'impuesto_usd': impuesto_usd,
+                    'total_usd': total_usd,
+                    'total_bs': round(total_usd * rate_value, 2) if rate_value else 0.0,
+                    'notas': invoice.notes or '',
+                })
+
+            cierres = []
+            for closure in daily_closures:
+                rate_value = self._get_rate_for_date(closure.closure_date)
+                total_usd = round(float(closure.total_sales_usd or 0), 4)
+
+                cierres.append({
+                    'fecha': closure.closure_date,
+                    'tasa': round(rate_value, 4) if rate_value else 0.0,
+                    'total_usd': total_usd,
+                    'total_bs': round(total_usd * rate_value, 2) if rate_value else 0.0,
+                    'con_factura_usd': round(float(closure.invoiced_sales_usd or 0), 4),
+                    'sin_factura_usd': round(float(closure.non_invoiced_sales_usd or 0), 4),
+                    'reconstruido_usd': round(float(closure.reconstructed_sales_usd or 0), 4),
+                    'unidades_salida': int(closure.generated_exit_units or 0),
+                    'origen': closure.source_file_name or 'Manual',
+                    'notas': closure.notes or '',
+                })
+
+            resumen = {
+                'compras_count': len(compras),
+                'compras_total_usd': round(sum(row['total_usd'] for row in compras), 4),
+                'compras_total_bs': round(sum(row['total_bs'] for row in compras), 2),
+                'cierres_count': len(cierres),
+                'cierres_total_usd': round(sum(row['total_usd'] for row in cierres), 4),
+                'cierres_total_bs': round(sum(row['total_bs'] for row in cierres), 2),
+                'cierres_unidades_salida': sum(row['unidades_salida'] for row in cierres),
+            }
+
+            return {
+                'start_date': start_date,
+                'end_date': end_date,
+                'empresa': company['company_name'],
+                'rif': company['rif'],
+                'direccion_fiscal': company['fiscal_address'],
+                'telefono': company['phone'],
+                'correo_electronico': company['email'],
+                'compras': compras,
+                'cierres': cierres,
+                'resumen': resumen,
+            }
+        except Exception as e:
+            current_app.logger.error(f"ReportsService.get_reporte_seniat_operativo error: {e}")
+            company = self._get_company_profile()
+            return {
+                'start_date': start_date,
+                'end_date': end_date,
+                'empresa': company['company_name'],
+                'rif': company['rif'],
+                'direccion_fiscal': company['fiscal_address'],
+                'telefono': company['phone'],
+                'correo_electronico': company['email'],
+                'compras': [],
+                'cierres': [],
+                'resumen': {
+                    'compras_count': 0,
+                    'compras_total_usd': 0,
+                    'compras_total_bs': 0,
+                    'cierres_count': 0,
+                    'cierres_total_usd': 0,
+                    'cierres_total_bs': 0,
+                    'cierres_unidades_salida': 0,
+                },
+            }
 
     # -------------------------------------------------------------------------
     # Libro Diario de Movimientos
@@ -440,6 +592,8 @@ class ReportsService:
         try:
             exchange_rate = self._get_current_rate()
             company = self._get_company_profile()
+            apertura_rate = self._get_rate_for_date(start_date)
+            cierre_rate = self._get_rate_for_date(end_date)
 
             # All movements in the period, ordered by date then product
             movimientos = (
@@ -494,8 +648,36 @@ class ReportsService:
                 p.id: p for p in Product.query.filter(Product.id.in_(product_ids)).all()
             } if product_ids else {}
 
+            movement_totals: Dict[int, Dict[str, float]] = defaultdict(lambda: {
+                'entradas_qty': 0,
+                'entradas_bs': 0.0,
+                'salidas_qty': 0,
+                'salidas_bs': 0.0,
+                'autoconsumos_qty': 0,
+                'autoconsumos_bs': 0.0,
+            })
+
+            for m in movimientos:
+                p = products.get(m.producto_id)
+                if not p:
+                    continue
+                fecha_mov = m.fecha.date() if isinstance(m.fecha, datetime) else m.fecha
+                rate_value = self._get_rate_for_date(fecha_mov)
+                precio_usd = float(p.precio_dolares or 0) * float(p.factor_ajuste or 1)
+                valor_bs = round(m.cantidad * precio_usd * rate_value, 2)
+                descripcion_mov = (m.descripcion or '').strip().lower()
+                totals = movement_totals[m.producto_id]
+                if m.tipo.upper() == 'ENTRADA':
+                    totals['entradas_qty'] += m.cantidad
+                    totals['entradas_bs'] += valor_bs
+                elif 'autoconsumo' in descripcion_mov:
+                    totals['autoconsumos_qty'] += m.cantidad
+                    totals['autoconsumos_bs'] += valor_bs
+                else:
+                    totals['salidas_qty'] += m.cantidad
+                    totals['salidas_bs'] += valor_bs
+
             # Build journal entries grouped by date
-            from collections import defaultdict
             by_date: Dict[date, list] = defaultdict(list)
             for m in movimientos:
                 fecha_mov = m.fecha.date() if isinstance(m.fecha, datetime) else m.fecha
@@ -512,6 +694,7 @@ class ReportsService:
                     p = products.get(m.producto_id)
                     if not p:
                         continue
+                    rate_value = self._get_rate_for_date(d)
                     precio_usd = float(p.precio_dolares or 0) * float(p.factor_ajuste or 1)
                     lineas.append({
                         'id': m.id,
@@ -520,12 +703,15 @@ class ReportsService:
                         'cantidad': m.cantidad,
                         'producto_id': p.id,
                         'codigo': p.codigo,
+                        'categoria': p.item_group.name if p.item_group else '',
                         'descripcion': p.descripcion,
                         'descripcion_mov': m.descripcion or '',
                         'usuario': m.creator.username if m.creator else 'Sistema',
                         'precio_usd': round(precio_usd, 2),
+                        'precio_bs': round(precio_usd * rate_value, 2),
                         'valor_usd': round(m.cantidad * precio_usd, 2),
-                        'valor_bs': round(m.cantidad * precio_usd * exchange_rate, 2),
+                        'valor_bs': round(m.cantidad * precio_usd * rate_value, 2),
+                        'tasa_bs': round(rate_value, 4),
                     })
                 asientos.append({'fecha': d, 'lineas': lineas})
 
@@ -539,32 +725,39 @@ class ReportsService:
                 stock_cierre = p.stock - delta_after
                 stock_apertura = stock_cierre - delta_periodo.get(pid, 0)
                 precio_usd = float(p.precio_dolares or 0) * float(p.factor_ajuste or 1)
+                totals = movement_totals.get(pid, {})
                 resumen_productos.append({
                     'codigo': p.codigo,
+                    'categoria': p.item_group.name if p.item_group else '',
                     'descripcion': p.descripcion,
+                    'proveedor': p.proveedor.nombre if p.proveedor else '',
                     'stock_apertura': max(0, stock_apertura),
-                    'entradas': sum(
-                        m.cantidad for m in movimientos
-                        if m.producto_id == pid and m.tipo.upper() == 'ENTRADA'
-                    ),
-                    'salidas': sum(
-                        m.cantidad for m in movimientos
-                        if m.producto_id == pid and m.tipo.upper() == 'SALIDA'
-                    ),
+                    'entradas': totals.get('entradas_qty', 0),
+                    'entradas_bs': round(totals.get('entradas_bs', 0.0), 2),
+                    'salidas': totals.get('salidas_qty', 0),
+                    'salidas_bs': round(totals.get('salidas_bs', 0.0), 2),
+                    'autoconsumos': totals.get('autoconsumos_qty', 0),
+                    'autoconsumos_bs': round(totals.get('autoconsumos_bs', 0.0), 2),
                     'stock_cierre': max(0, stock_cierre),
                     'precio_usd': round(precio_usd, 2),
+                    'precio_bs_cierre': round(precio_usd * cierre_rate, 2),
                     'valor_cierre_usd': round(max(0, stock_cierre) * precio_usd, 2),
-                    'valor_cierre_bs': round(max(0, stock_cierre) * precio_usd * exchange_rate, 2),
+                    'valor_apertura_bs': round(max(0, stock_apertura) * precio_usd * apertura_rate, 2),
+                    'valor_cierre_bs': round(max(0, stock_cierre) * precio_usd * cierre_rate, 2),
+                    'tasa_apertura_bs': round(apertura_rate, 4),
+                    'tasa_cierre_bs': round(cierre_rate, 4),
                 })
             resumen_productos.sort(key=lambda x: x['codigo'])
 
             total_entradas = sum(r['entradas'] for r in resumen_productos)
-            total_salidas = sum(r['salidas'] for r in resumen_productos)
+            total_salidas = sum(r['salidas'] + r['autoconsumos'] for r in resumen_productos)
 
             return {
                 'start_date': start_date,
                 'end_date': end_date,
                 'exchange_rate': exchange_rate,
+                'apertura_rate': apertura_rate,
+                'cierre_rate': cierre_rate,
                 'asientos': asientos,
                 'resumen_productos': resumen_productos,
                 'total_movimientos': len(movimientos),
@@ -580,6 +773,8 @@ class ReportsService:
                 'start_date': start_date,
                 'end_date': end_date,
                 'exchange_rate': 1.0,
+                'apertura_rate': 0.0,
+                'cierre_rate': 0.0,
                 'asientos': [],
                 'resumen_productos': [],
                 'total_movimientos': 0,
@@ -615,6 +810,8 @@ class ReportsService:
             # Date boundaries for the requested month
             first_day = date(year, month, 1)
             last_day = date(year, month, monthrange(year, month)[1])
+            apertura_rate = self._get_rate_for_date(first_day)
+            cierre_rate = self._get_rate_for_date(last_day)
 
             # Movements AFTER the month (to compute stock at month-close backwards)
             delta_after: Dict[int, int] = {}
@@ -638,35 +835,48 @@ class ReportsService:
                 else:
                     delta_after[r.producto_id] -= r.total
 
-            # Movements IN the month (entries and exits per product)
-            entradas_mes: Dict[int, int] = {}
-            salidas_mes:  Dict[int, int] = {}
-            rows_mes = (
-                db.session.query(
-                    Movimiento.producto_id,
-                    Movimiento.tipo,
-                    func.sum(Movimiento.cantidad).label('total'),
-                )
-                .filter(
-                    Movimiento.deleted_at == None,
-                    func.date(Movimiento.fecha) >= first_day,
-                    func.date(Movimiento.fecha) <= last_day,
-                )
-                .group_by(Movimiento.producto_id, Movimiento.tipo)
-                .all()
-            )
-            for r in rows_mes:
-                if r.tipo.upper() == 'ENTRADA':
-                    entradas_mes[r.producto_id] = entradas_mes.get(r.producto_id, 0) + r.total
-                else:
-                    salidas_mes[r.producto_id] = salidas_mes.get(r.producto_id, 0) + r.total
-
             products = (
                 Product.query
                 .filter(Product.deleted_at == None)
                 .order_by(Product.codigo.asc())
                 .all()
             )
+            product_map = {product.id: product for product in products}
+
+            # Movements IN the month (entries and exits per product)
+            entradas_mes: Dict[int, int] = {}
+            entradas_bs_mes: Dict[int, float] = {}
+            salidas_mes: Dict[int, int] = {}
+            salidas_bs_mes: Dict[int, float] = {}
+            autoconsumos_mes: Dict[int, int] = {}
+            autoconsumos_bs_mes: Dict[int, float] = {}
+            movimientos_mes = (
+                Movimiento.query
+                .filter(
+                    Movimiento.deleted_at == None,
+                    func.date(Movimiento.fecha) >= first_day,
+                    func.date(Movimiento.fecha) <= last_day,
+                )
+                .all()
+            )
+            for movimiento in movimientos_mes:
+                product = product_map.get(movimiento.producto_id)
+                if not product:
+                    continue
+                fecha_mov = movimiento.fecha.date() if isinstance(movimiento.fecha, datetime) else movimiento.fecha
+                rate_value = self._get_rate_for_date(fecha_mov)
+                precio_usd = float(product.precio_dolares or 0) * float(product.factor_ajuste or 1)
+                valor_bs = round(movimiento.cantidad * precio_usd * rate_value, 2)
+                descripcion_mov = (movimiento.descripcion or '').strip().lower()
+                if movimiento.tipo.upper() == 'ENTRADA':
+                    entradas_mes[movimiento.producto_id] = entradas_mes.get(movimiento.producto_id, 0) + movimiento.cantidad
+                    entradas_bs_mes[movimiento.producto_id] = entradas_bs_mes.get(movimiento.producto_id, 0.0) + valor_bs
+                elif 'autoconsumo' in descripcion_mov:
+                    autoconsumos_mes[movimiento.producto_id] = autoconsumos_mes.get(movimiento.producto_id, 0) + movimiento.cantidad
+                    autoconsumos_bs_mes[movimiento.producto_id] = autoconsumos_bs_mes.get(movimiento.producto_id, 0.0) + valor_bs
+                else:
+                    salidas_mes[movimiento.producto_id] = salidas_mes.get(movimiento.producto_id, 0) + movimiento.cantidad
+                    salidas_bs_mes[movimiento.producto_id] = salidas_bs_mes.get(movimiento.producto_id, 0.0) + valor_bs
 
             filas = []
             productos_con_movimiento = set(entradas_mes.keys()) | set(salidas_mes.keys())
@@ -681,17 +891,26 @@ class ReportsService:
 
                 filas.append({
                     'codigo': p.codigo,
+                    'categoria': p.item_group.name if p.item_group else '',
                     'descripcion': p.descripcion,
                     'proveedor': p.proveedor.nombre if p.proveedor else '',
                     'stock_apertura': max(0, stock_apertura),
                     'entradas': entradas_mes.get(pid, 0),
+                    'entradas_bs': round(entradas_bs_mes.get(pid, 0.0), 2),
                     'salidas': salidas_mes.get(pid, 0),
+                    'salidas_bs': round(salidas_bs_mes.get(pid, 0.0), 2),
+                    'autoconsumos': autoconsumos_mes.get(pid, 0),
+                    'autoconsumos_bs': round(autoconsumos_bs_mes.get(pid, 0.0), 2),
                     'stock_cierre': max(0, stock_cierre),
                     'precio_usd': round(precio_usd, 2),
+                    'precio_bs_apertura': round(precio_usd * apertura_rate, 2),
+                    'precio_bs_cierre': round(precio_usd * cierre_rate, 2),
                     'valor_apertura_usd': round(max(0, stock_apertura) * precio_usd, 2),
                     'valor_cierre_usd': round(max(0, stock_cierre) * precio_usd, 2),
-                    'valor_apertura_bs': round(max(0, stock_apertura) * precio_usd * exchange_rate, 2),
-                    'valor_cierre_bs': round(max(0, stock_cierre) * precio_usd * exchange_rate, 2),
+                    'valor_apertura_bs': round(max(0, stock_apertura) * precio_usd * apertura_rate, 2),
+                    'valor_cierre_bs': round(max(0, stock_cierre) * precio_usd * cierre_rate, 2),
+                    'tasa_apertura_bs': round(apertura_rate, 4),
+                    'tasa_cierre_bs': round(cierre_rate, 4),
                 })
             filas.sort(key=lambda x: x['codigo'])
 
@@ -700,7 +919,7 @@ class ReportsService:
             total_apertura_bs  = round(sum(f['valor_apertura_bs'] for f in filas), 2)
             total_cierre_bs    = round(sum(f['valor_cierre_bs'] for f in filas), 2)
             total_entradas     = sum(f['entradas'] for f in filas)
-            total_salidas      = sum(f['salidas'] for f in filas)
+            total_salidas      = sum(f['salidas'] + f['autoconsumos'] for f in filas)
 
             return {
                 'year': year,
@@ -708,6 +927,8 @@ class ReportsService:
                 'first_day': first_day,
                 'last_day': last_day,
                 'exchange_rate': exchange_rate,
+                'apertura_rate': apertura_rate,
+                'cierre_rate': cierre_rate,
                 'filas': filas,
                 'total_apertura_usd': total_apertura_usd,
                 'total_cierre_usd': total_cierre_usd,
