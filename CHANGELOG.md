@@ -2,6 +2,39 @@
 
 Todos los cambios notables en este proyecto serán documentados en este archivo.
 
+## [1.3.0] - 2026-03-07
+
+### ✨ Nuevas Funcionalidades
+
+- **Carga histórica de tasa BCV**
+  - Nuevo proceso de backfill desde archivos históricos XLS publicados por el BCV.
+  - Cobertura automática de sábados, domingos y feriados usando la fecha valor publicada por BCV.
+  - Nuevo script operativo `scripts/backfill_bcv_history.py`.
+
+- **Historial de tasa cambiaria con búsqueda y paginación**
+  - El módulo de precios ahora permite buscar tasas por fecha exacta.
+  - Se agregó paginación del historial para facilitar revisión de grandes volúmenes de tasas.
+
+### 🐛 Correcciones
+
+- **Histórico BCV utilizable en operación real**
+  - El servicio de tasas ahora soporta reconstrucción histórica persistente en la base local.
+  - Se verificó la cobertura completa del rango solicitado desde `2025-08-01` hasta `2026-03-06`.
+
+### 🧪 Tests Agregados o Actualizados
+
+- `tests/test_exchange_rate_service.py`
+  - Parser histórico BCV
+  - Cobertura de sábados, domingos y feriados
+- `tests/test_pricing_blueprint.py`
+  - Buscador por fecha del historial
+  - Paginación del historial de tasas
+
+### 📚 Documentación
+
+- Documento de release agregado en `docs/reportes/RELEASE_1.3.0.md`.
+- README actualizado con capacidades nuevas del histórico BCV y consulta del historial.
+
 ## [1.2.0] - 2026-03-07
 
 ### ✨ Nuevas Funcionalidades

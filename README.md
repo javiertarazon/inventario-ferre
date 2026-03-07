@@ -53,6 +53,8 @@ Sistema de gestión de inventario desarrollado con Flask, inspirado en Zoho Inve
 - **Sincronización BCV**
   - Consulta manual desde UI
   - Automatización diaria por script/Task Scheduler
+  - Carga histórica desde archivos BCV con cobertura de días no hábiles
+  - Historial con buscador por fecha y paginación
 
 - **Compras por factura**
   - Historial por proveedor, factura y producto
@@ -257,5 +259,5 @@ Para reportar problemas o sugerencias, crear un issue en GitHub.
 
 ---
 
-**Versión:** 1.2.0  
+**Versión:** 1.3.0  
 **Última actualización:** Marzo 2026

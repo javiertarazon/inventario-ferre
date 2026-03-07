@@ -99,3 +99,37 @@ def test_pricing_page_uses_dedicated_results_container(app, client, test_user):
     assert response.status_code == 200
     assert 'id="pricingSearchResults"' in html
     assert 'static/js/pricing_config.js' in html
+
+
+def test_pricing_page_supports_rate_search_by_date_and_pagination(app, client, test_user):
+    """Pricing page should expose date search and paginate exchange rate history."""
+    user_id, _ = test_user
+
+    with app.app_context():
+        for day in range(1, 26):
+            db.session.add(
+                ExchangeRate(
+                    date=date(2026, 2, day),
+                    rate=Decimal('40.00') + Decimal(str(day)),
+                    created_by=user_id,
+                )
+            )
+        db.session.commit()
+
+    login_response = login_test_user(client)
+    assert login_response.status_code == 302
+
+    first_page = client.get('/pricing/')
+    html = first_page.get_data(as_text=True)
+    assert first_page.status_code == 200
+    assert 'name="search_date"' in html
+    assert 'Paginación historial tasas' in html
+    assert '2026-02-25' in html
+    assert '2026-02-06' in html
+    assert '2026-02-05' not in html
+
+    filtered = client.get('/pricing/?search_date=2026-02-10')
+    filtered_html = filtered.get_data(as_text=True)
+    assert filtered.status_code == 200
+    assert '2026-02-10' in filtered_html
+    assert '2026-02-11' not in filtered_html

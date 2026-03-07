@@ -3,7 +3,8 @@ Pricing configuration blueprint - Exchange rate and price adjustment.
 """
 from flask import Blueprint, render_template, redirect, url_for, request, flash, jsonify
 from flask_login import login_required, current_user
-from datetime import date
+from datetime import date, datetime
+from decimal import Decimal
 
 from app.models import ExchangeRate, Product, ItemGroup, Proveedor
 from app.extensions import db
@@ -20,7 +21,21 @@ def index():
     try:
         rate_service = ExchangeRateService()
         current_rate = rate_service.get_current_rate()
-        recent_rates = rate_service.get_recent_rates(limit=10)
+        page = request.args.get('page', default=1, type=int)
+        search_date_raw = (request.args.get('search_date') or '').strip()
+        search_date = None
+
+        if search_date_raw:
+            try:
+                search_date = datetime.strptime(search_date_raw, '%Y-%m-%d').date()
+            except ValueError:
+                flash('La fecha de búsqueda no tiene un formato válido', 'error')
+
+        rates_pagination = rate_service.get_rates_paginated(
+            page=page,
+            per_page=20,
+            search_date=search_date,
+        )
         
         # Get all categories for filter
         item_group_service = ItemGroupService()
@@ -31,7 +46,8 @@ def index():
         
         return render_template('pricing_config.html',
                              current_rate=current_rate,
-                             recent_rates=recent_rates,
+                             rates_pagination=rates_pagination,
+                             search_date=search_date_raw,
                              categories=categories,
                              proveedores=proveedores)
     
@@ -39,7 +55,8 @@ def index():
         flash(f'Error al cargar configuración: {str(e)}', 'error')
         return render_template('pricing_config.html',
                              current_rate=None,
-                             recent_rates=[],
+                             rates_pagination=None,
+                             search_date='',
                              categories=[],
                              proveedores=[])
 

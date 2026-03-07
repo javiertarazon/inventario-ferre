@@ -259,6 +259,88 @@
 
 ## Request Log (2026-03-07) - Release 1.2.0 y publicacion en repositorio local/remoto
 
+## Request Log (2026-03-06) - Carga historica tasa BCV desde 2025-08-01
+
+### Completed
+- [x] Extendido `ExchangeRateService` para carga historica BCV desde XLS trimestrales publicados por el BCV
+- [x] Agregado comando CLI `backfill-bcv-history`
+- [x] Agregado script `scripts/backfill_bcv_history.py`
+- [x] Agregadas pruebas del parser historico y de cobertura de sabados, domingos y feriados
+- [x] Ejecutada la carga historica real en base local desde `2025-08-01` hasta `2026-03-06`
+- [x] Verificada la cobertura completa del rango solicitado
+  - Dias esperados: `218`
+  - Dias cargados en `exchange_rates`: `218`
+- [x] Verificadas fechas muestra con regla de no habiles
+  - `2025-08-02` y `2025-08-03` cargadas con la misma tasa de `2025-08-01`
+  - `2025-12-31` y `2026-01-01` cargadas con la misma tasa de `2025-12-30`
+
+### Pending
+- [ ] Resolver el registro persistente de la dependencia `xlrd` en `requirements.txt` si se va a reconstruir el entorno desde cero
+- [ ] Si el negocio lo requiere, repetir la carga hasta la fecha actual exacta del servidor en el momento de despliegue
+
+### Blockers
+- La herramienta de edicion aplicada en esta sesion no resolvio correctamente la ruta de `requirements.txt`, aunque la dependencia ya quedo instalada y funcional en el entorno local.
+
+### Evidence
+- Pruebas objetivo: `4 passed`
+- Consulta SQLite posterior: `(218, '2025-08-01', '2026-03-06')`
+- Muestras verificadas:
+  - `('2025-08-01', 125.9645)`
+  - `('2025-08-02', 125.9645)`
+  - `('2025-08-03', 125.9645)`
+  - `('2025-12-31', 300.6175)`
+  - `('2026-01-01', 300.6175)`
+  - `('2026-03-06', 432.0835)`
+
+## Request Log (2026-03-07) - Historial de tasa cambiaria con buscador y paginado
+
+### Completed
+- [x] Agregado filtro por fecha exacta al historial de tasas en el modulo de precios
+- [x] Agregada paginacion del historial de tasas
+  - Tamano de pagina: `20` registros
+- [x] Ajustado backend para consultar tasas por fecha y pagina
+- [x] Verificacion automatizada ejecutada
+  - Resultado: `4 passed` en `tests/test_pricing_blueprint.py`
+
+### Pending
+- [ ] Validacion manual en navegador del flujo de busqueda y navegacion entre paginas con datos reales
+
+### Blockers
+- Ninguno tecnico bloqueante.
+
+### Evidence
+- Archivos actualizados:
+  - `app/blueprints/pricing.py`
+  - `app/services/exchange_rate_service.py`
+  - `app/templates/pricing_config.html`
+  - `tests/test_pricing_blueprint.py`
+
+## Request Log (2026-03-07) - Release 1.3.0 y publicacion remota
+
+### Completed
+- [x] Actualizada la version correlativa del sistema a `1.3.0`
+- [x] Actualizada la documentacion de release para mejoras BCV e historial de tasas
+  - `CHANGELOG.md`
+  - `README.md`
+  - `docs/README.md`
+  - `docs/reportes/RELEASE_1.3.0.md`
+- [x] Revalidado el alcance funcional de la release
+  - `tests/test_exchange_rate_service.py`
+  - `tests/test_pricing_blueprint.py`
+  - Resultado conjunto: `8 passed`
+
+### Pending
+- [ ] Publicar commit y tag de `1.3.0` en remoto
+- [ ] Resolver el registro persistente de `xlrd` en `requirements.txt` cuando la herramienta permita editar ese archivo
+
+### Blockers
+- La herramienta de parcheo en esta sesion sigue fallando solo sobre `requirements.txt`, aunque la dependencia ya esta instalada y operativa en el entorno local.
+
+### Evidence
+- Version local preparada: `1.3.0`
+- Nota de release agregada: `docs/reportes/RELEASE_1.3.0.md`
+- Verificacion: `8 passed`
+
 ### Completed
 - [x] Actualizada la version correlativa del sistema a `1.2.0`
 - [x] Actualizada la documentacion de release

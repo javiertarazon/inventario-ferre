@@ -265,3 +265,20 @@ def register_commands(app):
                 f"Tasa BCV sincronizada para {result['date'].isoformat()}: "
                 f"{result['rate']:.4f} Bs/USD"
             )
+
+    @app.cli.command('backfill-bcv-history')
+    @click.option('--start-date', required=True, help='Fecha inicial en formato YYYY-MM-DD')
+    @click.option('--end-date', default=None, help='Fecha final en formato YYYY-MM-DD')
+    def backfill_bcv_history(start_date, end_date):
+        """Fetch and persist BCV historical USD rates for a date range."""
+        from datetime import datetime
+        from app.services.exchange_rate_service import ExchangeRateService
+
+        parsed_start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        parsed_end = datetime.strptime(end_date, '%Y-%m-%d').date() if end_date else date.today()
+        result = ExchangeRateService().sync_historical_from_bcv(parsed_start, parsed_end)
+        click.echo(
+            f"Historico BCV cargado {result['start_date'].isoformat()}..{result['end_date'].isoformat()} | "
+            f"creados={result['created_count']} actualizados={result['updated_count']} "
+            f"fechas={result['total_dates']} fuentes={result['source_entries']} libros={result['workbooks']}"
+        )
