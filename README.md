@@ -1,243 +1,214 @@
-# Sistema de Inventario Ferre-Exito
+# Sistema de Inventario y Facturación para Ferretería - Venezuela
 
-Sistema de gestión de inventario desarrollado con Flask, inspirado en Zoho Inventory, para INVERSIONES FERRE-EXITO, C.A.
+Sistema profesional para la gestión de inventario y facturación de ferreterías, cumpliendo con las normativas fiscales venezolanas (SENIAT).
 
 ## 🚀 Características Principales
 
-### Fase 1 - Implementado ✅
+### ✅ Normativa Fiscal Venezolana
+- **IVA**: Cálculo automático (16%, 8%, exento)
+- **IGTF**: 3% para pagos en divisas
+- **RIF**: Validación automática de clientes
+- **Facturas**: Formato fiscal con código QR
+- **Tasa BCV**: Actualización automática desde el Banco Central de Venezuela
 
-- **Gestión de Productos**
-  - CRUD completo de productos
-  - Categorización jerárquica (Item Groups)
-  - Puntos de reorden con alertas automáticas
-  - Importación masiva desde Excel/CSV
-  - Códigos de producto auto-generados
+### 💰 Sistema Bimonetario
+- Precios base en USD
+- Conversión automática a VES según tasa BCV
+- Historial de tasas
+- Alertas cuando falla la conexión al BCV (3 reintentos)
 
-- **Gestión de Clientes**
-  - Información completa de clientes
-  - Límites de crédito
-  - Direcciones de facturación y envío
-  - Términos de pago personalizables
+### 📦 Gestión de Inventario
+- Múltiples unidades de medida
+- Alertas de stock mínimo
+- Movimientos auditados
+- Categorización de productos
 
-- **Órdenes de Venta**
-  - Creación de órdenes con múltiples productos
-  - Workflow de estados (Borrador → Confirmada → Enviada → Entregada)
-  - Validación automática de stock
-  - Reducción/restauración de inventario
+### 👥 Usuarios y Seguridad
+- Roles: Administrador, Cajero, Almacénista
+- Autenticación JWT
+- Auditoría de acciones
+- Contraseñas encriptadas
 
-- **Dashboard con Métricas**
-  - KPIs de inventario en tiempo real
-  - Métricas de ventas y clientes
-  - Alertas de bajo stock
-  - Gráficos de ventas (últimos 30 días)
-  - Top productos más vendidos
+### 📱 Responsive Design
+- Funciona en PC, tablet y móvil
+- PWA (Progressive Web App)
+- Interfaz moderna con TailwindCSS
 
-- **Libro de Inventario Art 177**
-  - Reporte completo según normativa venezolana
-  - Exportación a Excel con formato oficial
-  - Filtros por rango de fechas
-  - Cálculo automático de entradas/salidas
+## 🛠️ Stack Tecnológico
 
-- **Importación de Inventario**
-  - Soporte para archivos XLSX, XLS y CSV
-  - Detección automática de columnas
-  - Creación y actualización masiva de productos
-  - Reporte detallado de resultados
+### Backend
+- **Python 3.9+**
+- **FastAPI** - API REST asíncrona
+- **SQLAlchemy** - ORM asíncrono
+- **SQLite** - Base de datos ( PostgreSQL/MySQL en producción)
+- **PyJWT** - Autenticación
+- **Bcrypt** - Encriptación de contraseñas
 
-## 📋 Requisitos
+### Frontend
+- **React 18**
+- **Vite** - Build tool
+- **TailwindCSS** - Estilos
+- **React Router** - Navegación
+- **Axios** - Cliente HTTP
+- **Lucide React** - Iconos
 
-- Python 3.8+
-- SQLite (incluido)
-- Navegador web moderno
+## 📋 Instalación
 
-## 🔧 Instalación
+### Requisitos Previos
+- Python 3.9 o superior
+- Node.js 18 o superior
+- npm o yarn
 
-1. Clonar el repositorio:
+### Backend
+
 ```bash
-git clone https://github.com/javiertarazon/inventario-ferre.git
-cd inventario-ferre
-```
+cd /workspace
 
-2. Crear entorno virtual:
-```bash
-python -m venv .venv
-```
+# Crear entorno virtual
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# o
+venv\Scripts\activate  # Windows
 
-3. Activar entorno virtual:
-- Windows:
-```bash
-.venv\Scripts\activate
-```
-- Linux/Mac:
-```bash
-source .venv/bin/activate
-```
-
-4. Instalar dependencias:
-```bash
+# Instalar dependencias
 pip install -r requirements.txt
+
+# Iniciar servidor
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-5. Configurar variables de entorno:
+### Frontend
+
 ```bash
-copy .env.example .env
-# Editar .env con tus configuraciones
+cd frontend
+
+# Instalar dependencias
+npm install
+
+# Copiar variables de entorno
+cp src/.env.example src/.env
+
+# Iniciar servidor de desarrollo
+npm run dev
+
+# Build para producción
+npm run build
 ```
 
-6. Inicializar base de datos:
+## 🔐 Credenciales por Defecto
+
+```
+Email: admin@ferreteria.com
+Password: admin123
+```
+
+## 📡 Endpoints de la API
+
+### Autenticación
+- `POST /api/auth/register` - Registrar usuario
+- `POST /api/auth/login` - Iniciar sesión
+- `GET /api/auth/me` - Obtener usuario actual
+
+### Productos
+- `GET /api/products` - Listar productos
+- `POST /api/products` - Crear producto
+- `PUT /api/products/{id}` - Actualizar producto
+- `DELETE /api/products/{id}` - Eliminar producto
+
+### Clientes
+- `GET /api/customers` - Listar clientes
+- `POST /api/customers` - Crear cliente
+- `GET /api/customers/validate-rif/{rif}` - Validar RIF
+
+### Ventas
+- `GET /api/sales` - Listar ventas
+- `POST /api/sales` - Registrar venta
+- `GET /api/sales/{id}/pdf` - Descargar factura PDF
+
+### Tasa de Cambio
+- `GET /api/exchange-rate/current` - Tasa actual
+- `POST /api/exchange-rate/update-bcv` - Actualizar desde BCV
+- `POST /api/exchange-rate/update` - Actualización manual
+- `GET /api/exchange-rate/history` - Historial
+
+## 🧪 Pruebas Unitarias
+
 ```bash
-flask db upgrade
-python create_db.py
+# Ejecutar pruebas del backend
+pytest tests/ -v
+
+# Con cobertura
+pytest tests/ --cov=app --cov-report=html
 ```
 
-7. Ejecutar aplicación:
+## 📄 Estructura del Proyecto
+
+```
+/workspace
+├── app/                      # Backend Python
+│   ├── api/                  # Endpoints REST
+│   ├── core/                 # Configuración y seguridad
+│   ├── models/               # Modelos de datos
+│   ├── services/             # Lógica de negocio
+│   └── utils/                # Utilidades
+├── frontend/                 # Frontend React
+│   ├── src/
+│   │   ├── components/       # Componentes UI
+│   │   ├── context/          # Contextos React
+│   │   ├── hooks/            # Hooks personalizados
+│   │   ├── pages/            # Páginas
+│   │   └── services/         # Servicios API
+│   └── package.json
+├── tests/                    # Pruebas unitarias
+└── README.md
+```
+
+## ⚠️ Consideraciones Fiscales
+
+### IVA (Impuesto al Valor Agregado)
+- **General**: 16%
+- **Reducida**: 8% (alimentos, medicinas)
+- **Exento**: 0% (productos de primera necesidad)
+
+### IGTF (Impuesto a las Grandes Transacciones Financieras)
+- **3%** sobre el total cuando el pago se realiza en divisas
+
+### Facturación
+- Numeración correlativa obligatoria
+- Código QR para validación fiscal
+- Datos completos del emisor y receptor
+- Desglose de impuestos
+
+## 🔧 Configuración de Producción
+
+### Variables de Entorno (Backend)
 ```bash
-python run_app.py
+DATABASE_URL=sqlite:///./ferreteria.db
+SECRET_KEY=tu_clave_secreta_muy_segura
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+DEFAULT_EXCHANGE_RATE=36.5
+BCV_URL=https://www.bcv.org.ve
 ```
 
-8. Acceder a: `http://127.0.0.1:5000`
+### Base de Datos
+Para producción se recomienda:
+- **PostgreSQL** para entornos multiusuario
+- Configurar backups automáticos
+- Índices en campos de búsqueda frecuente
 
-**Credenciales por defecto:**
-- Usuario: `admin`
-- Contraseña: `admin`
+## 📞 Soporte
 
-## 📁 Estructura del Proyecto
-
-```
-inventario-ferre/
-├── app/
-│   ├── blueprints/          # Rutas y controladores
-│   │   ├── main.py          # Rutas principales
-│   │   ├── products.py      # Gestión de productos
-│   │   ├── customers.py     # Gestión de clientes
-│   │   ├── sales_orders.py  # Órdenes de venta
-│   │   ├── item_groups.py   # Categorías
-│   │   ├── suppliers.py     # Proveedores
-│   │   └── movements.py     # Movimientos de inventario
-│   ├── models/              # Modelos de datos
-│   ├── repositories/        # Capa de acceso a datos
-│   ├── services/            # Lógica de negocio
-│   ├── templates/           # Plantillas HTML
-│   ├── middleware/          # Middleware y manejo de errores
-│   └── utils/               # Utilidades
-├── migrations/              # Migraciones de base de datos
-├── uploads/                 # Archivos cargados
-├── backups/                 # Respaldos de base de datos
-├── logs/                    # Archivos de log
-└── requirements.txt         # Dependencias Python
-```
-
-## 🎯 Uso
-
-### Importar Inventario
-
-1. Ir a **Inventario → Importar Inventario**
-2. Seleccionar archivo Excel o CSV
-3. El archivo debe contener al menos:
-   - Columna "Código" o "Code"
-   - Columna "Descripción" o "Description"
-4. Columnas opcionales: Stock, Precio
-5. Click en "Importar Archivo"
-
-### Generar Libro de Inventario
-
-1. Ir a **Inventario → Libro de Inventario**
-2. Seleccionar rango de fechas
-3. Ver reporte en pantalla o exportar a Excel
-4. El reporte cumple con Art 177 de la ley I.S.L.R
-
-### Crear Orden de Venta
-
-1. Ir a **Órdenes → Nueva Orden**
-2. Seleccionar cliente
-3. Agregar productos (múltiples)
-4. Los precios se cargan automáticamente
-5. Confirmar orden para reducir stock
-
-### Configurar Puntos de Reorden
-
-1. Ir a **Productos → Editar Producto**
-2. Establecer "Punto de Reorden"
-3. Establecer "Cantidad a Reordenar"
-4. El sistema alertará cuando stock ≤ punto de reorden
-
-## 🗺️ Roadmap
-
-### Fase 2 - En Planificación
-- Gestión de compras y órdenes de compra
-- Múltiples almacenes
-- Transferencias entre almacenes
-- Ajustes de inventario
-
-### Fase 3 - Futuro
-- Integración con envíos
-- Reportes avanzados
-- API REST completa
-- Aplicación móvil
-
-Ver [ZOHO_INVENTORY_ROADMAP.md](ZOHO_INVENTORY_ROADMAP.md) para más detalles.
-
-## 🛠️ Tecnologías
-
-- **Backend:** Flask 3.0+
-- **Base de Datos:** SQLite con SQLAlchemy
-- **Frontend:** Bootstrap 5, Bootstrap Icons
-- **Autenticación:** Flask-Login
-- **Migraciones:** Flask-Migrate (Alembic)
-- **Importación:** Pandas, OpenPyXL
-- **Validación:** WTForms
-
-## 📊 Arquitectura
-
-El sistema sigue una arquitectura en capas:
-
-1. **Presentación:** Templates Jinja2 + Bootstrap
-2. **Controladores:** Flask Blueprints
-3. **Servicios:** Lógica de negocio
-4. **Repositorios:** Acceso a datos
-5. **Modelos:** SQLAlchemy ORM
-
-Patrones implementados:
-- Repository Pattern
-- Service Layer Pattern
-- Soft Delete Pattern
-- Blueprint Pattern
-
-## 🔒 Seguridad
-
-- Autenticación requerida en todas las rutas
-- Bloqueo de cuenta tras intentos fallidos
-- Soft delete para integridad referencial
-- Validación de datos en múltiples capas
-- Logs de auditoría
+Para soporte técnico o consultas sobre la implementación:
+- Revisar la documentación de la API en `/docs` (Swagger UI)
+- Verificar logs del sistema
+- Contactar al administrador
 
 ## 📝 Licencia
 
-Este proyecto es privado y propiedad de INVERSIONES FERRE-EXITO, C.A.
-
-## 👥 Autor
-
-Desarrollado por Javier Tarazon para INVERSIONES FERRE-EXITO, C.A.
-
-## 📞 Contacto
-
-- **Empresa:** INVERSIONES FERRE-EXITO, C.A
-- **RIF:** J31764195-7
-- **Dirección:** Calle Bolívar. Palo Negro, Municipio Libertador. Estado Aragua
-- **Teléfono:** 0412-7434522
-
-## 🐛 Reportar Problemas
-
-Para reportar problemas o sugerencias, crear un issue en GitHub.
-
-## 📚 Documentación Adicional
-
-- [FASE1_IMPLEMENTACION.md](FASE1_IMPLEMENTACION.md) - Detalles de implementación Fase 1
-- [FASE1_BLUEPRINTS_TEMPLATES.md](FASE1_BLUEPRINTS_TEMPLATES.md) - Documentación de blueprints y templates
-- [SISTEMA_FUNCIONAL.md](SISTEMA_FUNCIONAL.md) - Estado funcional del sistema
-- [ZOHO_INVENTORY_ROADMAP.md](ZOHO_INVENTORY_ROADMAP.md) - Roadmap completo
+Este software está diseñado para uso comercial en ferreterías venezolanas.
+Cumple con las normativas del SENIAT vigentes en 2024.
 
 ---
 
-**Versión:** 1.0.0  
-**Última actualización:** Febrero 2026
+**Desarrollado con ❤️ para las ferreterías de Venezuela**

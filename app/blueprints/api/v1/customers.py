@@ -65,8 +65,7 @@ def list_customers():
         
         if search:
             query = query.filter(
-                (Customer.nombre.ilike(f'%{search}%')) |
-                (Customer.apellido.ilike(f'%{search}%')) |
+                (Customer.name.ilike(f'%{search}%')) |
                 (Customer.email.ilike(f'%{search}%'))
             )
         

@@ -57,10 +57,9 @@ class TestCustomerAPI:
             from app.extensions import db
             for i in range(25):
                 customer = Customer(
-                    nombre=f'Customer{i}',
-                    apellido=f'Last{i}',
+                    name=f'Customer{i} Test',
                     email=f'customer{i}@example.com',
-                    telefono='555-1234',
+                    phone='555-1234',
                     is_active=True
                 )
                 db.session.add(customer)
@@ -88,10 +87,9 @@ class TestCustomerAPI:
         with app.app_context():
             from app.extensions import db
             customer = Customer(
-                nombre='Test',
-                apellido='Customer',
+                name='Test Customer',
                 email='test@example.com',
-                telefono='555-1234',
+                phone='555-1234',
                 is_active=True
             )
             db.session.add(customer)
@@ -101,8 +99,7 @@ class TestCustomerAPI:
         response = client.get(f'/api/v1/customers/{customer_id}', headers=auth_headers)
         assert response.status_code == 200
         data = response.get_json()
-        assert data['nombre'] == 'Test'
-        assert data['apellido'] == 'Customer'
+        assert data['name'] == 'Test Customer'
         assert data['email'] == 'test@example.com'
     
     def test_get_customer_not_found(self, client, auth_headers):
@@ -113,10 +110,9 @@ class TestCustomerAPI:
     def test_create_customer(self, client, auth_headers):
         """Test creating a new customer."""
         customer_data = {
-            'nombre': 'Juan',
-            'apellido': 'Pérez',
+            'name': 'Juan Pérez',
             'email': 'juan@example.com',
-            'telefono': '555-5678'
+            'phone': '555-5678'
         }
         
         response = client.post(
@@ -127,16 +123,14 @@ class TestCustomerAPI:
         
         assert response.status_code == 201
         data = response.get_json()
-        assert data['nombre'] == 'Juan'
-        assert data['apellido'] == 'Pérez'
+        assert data['name'] == 'Juan Pérez'
         assert data['email'] == 'juan@example.com'
         assert 'id' in data
     
     def test_create_customer_missing_field(self, client, auth_headers):
         """Test creating customer with missing required field."""
         customer_data = {
-            'nombre': 'Juan',
-            'apellido': 'Pérez'
+            'name': 'Juan Pérez'
             # Missing email
         }
         
